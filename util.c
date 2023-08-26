@@ -15,7 +15,7 @@ int vasprintf(char **restrict strp, const char *restrict fmt, va_list ap)
 {
 	va_list ap_copy;
 	va_copy (ap_copy, ap);
-	int nwritten = vsnprintf (0, 0, fmt, ap_copy);
+	int const nwritten = vsnprintf (0, 0, fmt, ap_copy);
 	va_end (ap_copy);
 
 	if (nwritten < 0) {
@@ -27,7 +27,7 @@ int vasprintf(char **restrict strp, const char *restrict fmt, va_list ap)
 		goto fatal;
 	}
 	
-	int ret_val = vsprintf (*strp, fmt, ap);
+	int const ret_val = vsprintf (*strp, fmt, ap);
 
 	if (ret_val < 0) {
 		free (*strp);
@@ -46,7 +46,7 @@ ATTRIBUTE_PRINTF_LIKE (2, 3) int asprintf (char **restrict strp, const char *res
 	va_list argp;
 	va_start (argp, fmt);
 	*strp = 0;
-	int nwritten = kilo_vasprintf (strp, fmt, argp);
+	int const nwritten = kilo_vasprintf (strp, fmt, argp);
 	va_end (argp);
 
 	return nwritten;

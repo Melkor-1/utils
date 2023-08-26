@@ -42,14 +42,17 @@ int my_strcasecmp2 (const char *restrict s, const char *restrict t)
 
 int main (void) 
 {
-	char s[] = "aPple";
-	char t[] = "APPLE";
+	static const char s[] = "aPple";
+	static const char t[] = "APPLE";
 
+    !my_strcasecmp2 (s, t) ? puts ("Compared equal.") : puts ("Failed.");
+#if 0    
 	if (!my_strcasecmp2 (s, t)) {
 		puts ("Compared equal.");
 	} else {
 		puts ("Failed");
 	}
+#endif
 	return EXIT_SUCCESS;
 }
 

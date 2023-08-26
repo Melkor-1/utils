@@ -1,8 +1,17 @@
-#include <stdio.h>
 #include <stdlib.h>
+
+#ifndef STDDEF_H
+#include <stddef.h>
+#endif
+
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>
+
+#include "attrib.h"
+
+#define FAIL -1
+
 
 #ifdef PATH_MAX
 static long path_max = PATH_MAX;
@@ -19,7 +28,7 @@ static long xsi_version = 0;
 /* Synopsis: Dynamically allocates space for a pathname. Stores the path size in *size_p.
 *  Returns: The allocated size (if non-null), else returns NULL.
 */
-char *path_alloc(size_t *size_p) 
+ATTRIBUTE_COLD char *path_alloc(size_t *size_p) 
 {
 	size_t size;
 
@@ -79,7 +88,7 @@ static long open_max = 0;
 
 /* Returns the max limit of open files, or -1 in case of sysconf failure 
 */
-static long open_max(void)
+ATTRIBUTE_COLD long open_max (void)
 {
 	if (!open_max) {
 		errno = 0;
@@ -88,11 +97,46 @@ static long open_max(void)
 				open_max = OPEN_MAX_GUESS;	/* errno is unchanged if open_max is undeterminate */
 			} else {
 				perror("sysconf");
-				return -1;
+				return FAIL;
 			}
 		}
 	}
 	return open_max;
 }
 
-/* Test the above functions sooner or later */
+/* If BUFSIZ is indeterminate, this might be inadequate. */
+#define PAGE_SIZE_GUESS		4096
+
+ATTRIBUTE_COLD void set_page_size (long *page_size)
+{
+    if (!*page_size) {
+        errno = 0;
+        if ((*page_size = sysconf (_SC_PAGE_SIZE)) == FAIL) {
+            /*
+             * errno is unchanged if _SC_PAGE_SIZE is indeterminate, or unsupported. 
+             */
+            if (!errno) {
+                *page_size = PAGE_SIZE_GUESS;
+            } else {
+                perror ("sysconf()");
+            }
+        }
+    }
+}
+
+ATTRIBUTE_COLD void set_path_max (long *path_max) 
+{
+	if (!*path_max) {
+		errno = 0;
+		if ((*path_max = pathconf ("/", _PC_PATH_MAX)) == FAIL) {
+			if (!errno) {
+				*path_max = PATH_MAX_GUESS;
+			} else {
+				perror ("pathconf()");
+			}
+		} else {
+			++path_max;		/* Add one since it's relative to root. */
+		}
+	}
+}
+

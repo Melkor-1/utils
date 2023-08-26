@@ -53,8 +53,5 @@ gen_max (l, long)
 gen_max (u, unsigned)
 gen_max (i, int)
 
-ATTRIBUTE_COLD extern void set_page_size (long *page_size);
-ATTRIBUTE_COLD extern void set_path_max (long *path_max); 
-
 #endif /* GENERIC_H */
 
