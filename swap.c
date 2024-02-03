@@ -1,10 +1,10 @@
 #include <string.h>
 
-static inline void swap_detail (void *p1, void *p2, void *tmp, size_t psize)
+static inline void swap_detail(void *p1, void *p2, void *tmp, size_t psize)
 {
-    memcpy (tmp, p1, psize);
-    memcpy (p1, p2, psize);
-    memcpy (p2, tmp, psize);
+    memcpy(tmp, p1, psize);
+    memcpy(p1, p2, psize);
+    memcpy(p2, tmp, psize);
 }
 
 /**
@@ -21,5 +21,3 @@ static inline void swap_detail (void *p1, void *p2, void *tmp, size_t psize)
 *   declared with the register storage class.
 */
 #define SWAP(a, b) swap_detail (&(a), &(b), (char[(sizeof(a) == sizeof(b)) ? (ptrdiff_t)sizeof(a) : -1]){0}, sizeof(a))
-
-

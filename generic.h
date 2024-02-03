@@ -1,5 +1,5 @@
 #ifndef GENERIC_H
-#define GENERIC_H
+#define GENERIC_H 1
 
 #define Min(x, y) _Generic ((x) + (y),	\
 					long double: min_ld,	\
@@ -12,20 +12,20 @@
 					unsigned: min_u,	\
 					default: min_i	\
 					)(x, y)
-						
+
 #define gen_min(_suffix, _type) \
 	static inline _type min_##_suffix (_type x, _type y) \
 	{	return x < y ? x : y;	}
 
-gen_min (ld, long double)
-gen_min (d, double)
-gen_min (f, float)
-gen_min (ull, unsigned long long)
-gen_min (ll, long long)
-gen_min (ul, unsigned long)
-gen_min (l, long)
-gen_min (u, unsigned)
-gen_min (i, int)
+gen_min(ld, long double)
+gen_min(d, double)
+gen_min(f, float)
+gen_min(ull, unsigned long long)
+gen_min(ll, long long)
+gen_min(ul, unsigned long) 
+gen_min(l, long) 
+gen_min(u, unsigned) 
+gen_min(i, int)
 
 #define Max(x, y) _Generic ((x) + (y),	\
 					long double: max_ld,	\
@@ -38,20 +38,16 @@ gen_min (i, int)
 					unsigned: max_u,	\
 					default: max_i	\
 					)(x, y)
-						
+
 #define gen_max(_suffix, _type) \
 	static inline _type max_##_suffix (_type x, _type y) \
 	{	return x > y ? x : y;	}
 
-gen_max (ld, long double)
-gen_max (d, double)
-gen_max (f, float)
-gen_max (ull, unsigned long long)
-gen_max (ll, long long)
-gen_max (ul, unsigned long)
-gen_max (l, long)
-gen_max (u, unsigned)
-gen_max (i, int)
+gen_max(ld, long double)
+gen_max(d, double)
+gen_max(f, float)
+gen_max(ull, unsigned long long)
+gen_max(ll, long long)
+gen_max(ul, unsigned long) gen_max(l, long) gen_max(u, unsigned) gen_max(i, int)
 
-#endif /* GENERIC_H */
-
+#endif                          /* GENERIC_H */
