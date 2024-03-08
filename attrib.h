@@ -14,12 +14,14 @@
  * 1) All attributes that take an optional or variable number of arguments will
  *    have two versions; one of the form `attr`, and one of the form `attrex`. 
  *    The latter shall expect one or more arguments.
- * 2) The attributes that have no equivalent in GNU C shall be replaced with 
- *    nothing except for `__maybe_unused__`, which would expand to `unused`.
+ * 2) For ISO C, the attributes that have no equivalent in GNU C shall be replaced
+ *    with nothing except for `__maybe_unused__`, which would expand to `unused`.
  *    GNU C doesn't have `__reproducible__` or `__unsequenced__`, yet one may 
  *    be interested in looking at `pure` - which is more relaxed than 
  *    `__reproducible__` - and `const` - which is more strict than
  *    `__unsequenced__`.
+ *    The same holds true for ISO C++, except that __assume__ would expand to GNU C's
+ *    __attribute__((assume(expr)).
  *
  * References:
  *  https://en.cppreference.com/w/c/language/attributes
@@ -308,7 +310,7 @@
     #define ATTRIB_INTRINSIC                    [[msvc::intrinsic]]
 
     #if !defined(ATTRIB_NOINLINE)
-        #define ATTRIB_NOINLINE                     [[msvc::noinline]]
+        #define ATTRIB_NOINLINE                 [[msvc::noinline]]
     #endif                          /* [[msvc::noinline]] */
 
     #define ATTRIB_NOINLINE_CALLS               [[msvc::noinline_calls]]
@@ -325,7 +327,7 @@
 
     #define ATTRIB_NOINLINE_CALLS               /**/
     #define ATTRIB_NO_TLS_GUARD                 /**/
-#endif                          /* _MSC_VER */
+#endif                          /* defined(_MSC_VER) */
 
 /* This is how the Linux kernel defines these two macros, and we follow suit. */
 #if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_LLVM_COMPILER)
@@ -334,6 +336,6 @@
 #else
     #define likely(x)		(!!(x))
     #define unlikely(x)		(!!(x))
-#endif                          /* __GNUC__ || __clang__ */
+#endif                          /* defined(__GNUC__) || defined(__clang__) || defined(__INTEL_LLVM_COMPILER)*/
 
 #endif                          /* ATTRIB_H */
