@@ -20,7 +20,7 @@
  *    be interested in looking at `pure` - which is more relaxed than 
  *    `__reproducible__` - and `const` - which is more strict than
  *    `__unsequenced__`.
- *    The same holds true for ISO C++, except that __assume__ would expand to GNU C's
+ *    The same holds true for ISO C++, except that __assume__ would expand to GNU C++'s
  *    __attribute__((assume(expr)).
  *
  * References:
