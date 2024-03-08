@@ -5,7 +5,7 @@
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202000L
     #include <stddef.h>             /* nullptr_t */
 #else
-    #define nullptr (void *)0
+    #define nullptr ((void *)0)
     typedef void *nullptr_t;
 #endif                          /* nullptr/nullptr_t */
 
