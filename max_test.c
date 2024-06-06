@@ -1,11 +1,17 @@
 #include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "/mnt/hgfs/shared_folder/max.h"
+#include "max.h"
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+/* Current versions of gcc and clang support -std=c2x which sets 
+ * __STDC_VERSION__ to this placeholder value. GCC 14.1 does not set
+ * __STDC_VERSION__ to 202311L with the std=c23 flag, but Clang 18.1 does. */
+#define C23_PLACEHOLDER 202000L
+    
+#if defined(__STDC_VERSION__) && __STDC_VERSION >= C23_PLACEHOLDER
     #define NORETURN    [[noreturn]]
 #elif defined(_MSC_VER)
     #define NORETURN    __declspec(noreturn)
@@ -135,7 +141,6 @@ void test_max_mixed(void)
     #endif
 
     #if ULLONG_MAX >= LONG_MAX
-    printf("%s\n", ctypename(MAX(1000L, 500ULL)));
     test(MAX(1000L, 500ULL) == 1000L && strcmp(ctypename(MAX(1000, 500ULL)), "unsigned long long") == 0);
     test(MAX(-5000L, 30000ULL) == 30000ULL && strcmp(ctypename(MAX(-5000L, 30000ULL)), "unsigned long long") == 0);
     test(MAX(lmax, 0ULL) == lmax && strcmp(ctypename(MAX(lmax, 0ULL)), "unsigned long long") == 0);
