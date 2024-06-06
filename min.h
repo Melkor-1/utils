@@ -199,10 +199,6 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long long min_ulli_lli(unsigned 
     return min_lli_ulli(b, a);
 }
 
-/* gen_nonbasic_min(int, unsigned long long, int, int, ulli_i) */
-/* gen_nonbasic_min(long, unsigned long long, long, long, ulli_li) */
-/* gen_nonbasic_min(long long, unsigned long long, long long, long, ulli_lli) */
-
 #define MIN_ULLI(a, b)  _Generic((b),                                   \
                             int:                    min_ulli_i,         \
                             unsigned int:           min_ulli_ui,        \
