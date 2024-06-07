@@ -206,6 +206,63 @@
 #define FOREACH_ARRAY_ELEMENT(TYPE, VAR, ARRAY) \
     for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_SIZE(ARRAY); ++VAR)
 
+
+/* Repeatedly calls the function FN with each argument of type TYPE *. */
+#define FN_APPLY(TYPE, FN, ...)                         \
+    BLOCK(                                              \
+		TYPE **list = (TYPE*[]){ __VA_ARGS__, nullptr};	\
+		for (size_t i = 0; list[i]; i++)	            \
+			FN(list[i]);	                            \
+		} while (false)                                 \
+    )
+
+
+/**
+ * Calls the free() function on all arguments individually. This is useful for
+ * replacing multiple calls like these:
+ *      free(a);
+ *      free(b);
+ *      free(c);
+ *      free(d);
+ *
+ * with:
+ *      Free_all(a, b, c, d); */
+#define FREE_ALL(...) FN_APPLY(void, free, __VA_ARGS__)
+
+
+/**
+ * Increases cap by 2x and returns it.
+ *
+ * double_capacity() does not check for overflow. */
+[[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
+double_capacity(size_t cap);
+
+
+/**
+ * Increases cap by 1.5x and returns it.
+ *
+ * grow_capacity() does not check for overflow. */
+[[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
+grow_capacity(size_t cap);
+
+
+/* The semantics of reproducible and gnu::const are a little different, but
+ * that difference is not relevant here. 
+ *
+ * Fall back to gnu::const if reproducible is not available, or vice versa. If
+ * neither are recognized, they shall be ignored. */
+[[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
+double_capacity(size_t cap)
+{
+    return cap < 8 ? 8 : cap * 2;
+}
+
+[[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
+grow_capacity(size_t cap)
+{
+    return cap < 8 ? 8 : cap * 3 / 2;
+}
+
 /* -------------------------------------------------------------------------- */
 
 #include <stdarg.h>
