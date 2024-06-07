@@ -148,8 +148,41 @@
 #define POINTER_CAST(T, EXPR)       ((T)(uintptr_t)(EXPR))
 
 /**
+ * Expands to true if val_ is within the range of lo_ to hi_ (inclusive). */
+#define RANGE(val_, lo_, hi_)   \
+    (((val_) >= (lo_)) && ((val_) <= (hi_)))
+
+/**
+ * Expands to true if val_ is within the range of lo_ to hi_ (exclusive). */
+#define RANGEM1(val_, lo_, hi_) \
+    (((val_) >= (lo_)) && ((val_) < (hi_)))
+
+/**
  * Embeds the given statements into a compound statement block. */
 #define BLOCK(...)                  do { __VA_ARGS__ } while (false)
+
+/**
+ * To enable debugging trace, define DEBUG. */
+#ifdef DEBUG
+    #define TRACE_ON    1
+#else
+    #define TRACE_ON    0
+#endif
+
+/**
+ * When debugging trace is enabled, TRACE() prints to stderr with the formatted
+ * message, source file name, line number, and function name.
+ *
+ * For TRACE() to work with no arguments, use: 
+ *      TRACE("%s\n", "Foo"); 
+ */
+#define TRACE(fmt, ...)                                         \
+    BLOCK(                                                      \
+        if (TRACE_ON) {                                         \
+            fprintf(stderr, "%s::%d::%s():: " fmt, __FILE__,    \
+                    __LINE__, __func__, __VA_ARGS__);           \
+        }                                                       \
+    )
 
 /**
  * Asserts that this line of code is run at most once --- useful in
