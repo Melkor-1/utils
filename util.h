@@ -7,6 +7,9 @@
  * 
  * Declares utility constants, macros, and functions. */
 
+#include <stdarg.h>
+#include <string.h>
+
 #define CHARIFY_0   '0'
 #define CHARIFY_1   '1'
 #define CHARIFY_2   '2' 
@@ -73,6 +76,7 @@
 
 #define CONCAT2_INDIRECT(A, B)      A ## B
 #define STRINGIFY_INDIRECT(A)       #A
+
 
 /**
  * Concatenate A to B together to form a single token. */
@@ -217,9 +221,47 @@
     )
 
 
+[[gnu::always_inline]] static inline void swap_internal(size_t psize,
+                                                        void *restrict tmp, 
+                                                        void *restrict p1, 
+                                                        void *restrict p2)
+{
+    memcpy(tmp, p1, psize);
+    memcpy(p1, p2, psize);
+    memcpy(p2, tmp, psize);
+}
+
+
 /**
- * Calls the free() function on all arguments individually. This is useful for
- * replacing multiple calls like these:
+ * Swaps the contents of A and B.
+ *
+ * Properties:
+ *  - It evaluates each of A and B only once.
+ *  - It has a compile-time check for the correct sizes, and prints a nice,
+ *    user-friendly error message if the sizes are different.
+ *  - It has a compile-time check for compatible types.
+ *  - It has no naming issue with a hidden variable.
+ *  - The size of the temporary variable is computed at compile time, so the 
+ *    compound literal is not a dynamic array.
+ *  - It does not rely on VLAs, so it is more portable.
+ *
+ *
+ * Note: The expressions must allow the & operator to be applicable. Thus it 
+ * will not work on variables that are declared with the register storage class.
+ * 
+ * SWAP() would invoke undefined behavior if A and B are the same. */
+#define SWAP(A, B)                                                            \
+    swap_internal(                                                            \
+        (sizeof (A) * STATIC_ASSERT_EXPR(sizeof (A) == sizeof (B),            \
+            "Arguments of SWAP() must have same size and compatible types.")),\
+        (char [sizeof *(1 ? &(A) : &(B))]) {0},                               \
+        &(A),                                                                 \
+        &(B))
+
+
+/**
+ * Calls the free() function individually on all arguments. This is useful for
+ * replacing multiple calls to free() like these:
  *      free(a);
  *      free(b);
  *      free(c);
@@ -264,8 +306,6 @@ grow_capacity(size_t cap)
 }
 
 /* -------------------------------------------------------------------------- */
-
-#include <stdarg.h>
 
 /**
  * The functions util_asprintf() and util_vasprintf() are analogs of sprintf() 
