@@ -1,11 +1,12 @@
+/**
+ * Author: Harith
+ * Date: Friday, June 7, 2024
+ * 
+ * Defines utility functions declared in util.h. */
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef __GNUC__
-    #define HAVE_GNU_STRCHRNUL
-#endif /* __GNUC__ */
-
 #include <string.h>
 #include <stdarg.h>
 
@@ -131,7 +132,7 @@ int main(void)
     assert(util_strchrnul(haystack, 'o') == strchr(haystack, 'o'));
     assert(*util_strchrnul(haystack, 'p') == '\0');
 
-#ifdef HAVE_GNU_STRCHRNUL
+#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_LLVM_COMPILER)
     /* Specify the prototype, because defining _GNU_SOURCE doesn't seem to. */
     char *strchrnul(const char *p, int ch);
 
@@ -139,7 +140,7 @@ int main(void)
     static constexpr char t[] = "gown"; 
     assert(util_strchrnul(s, 'h') == strchrnul(s, 'h'));
     assert(util_strchrnul(t, 'g') == strchrnul(t, 'g'));
-#endif /* HAVE_GNU_STRCHRNUL */
+#endif 
 }
 
 #endif
