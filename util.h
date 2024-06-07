@@ -221,6 +221,23 @@
     )
 
 
+/**
+ * Takes two type names (or expressions representing types) and evalutes to the
+ * size (in bytes) of the larget type. */
+#define MAXSIZE(X, Y)   (sizeof(X) > sizeof(Y) ? sizeof(X) : sizeof(Y))
+
+
+/**
+ * Takes two type names (or expressions representing types) and evalutes to the
+ * size (in bytes) of the smaller type. */
+#define MINSIZE(X, Y)   (sizeof(X) < sizeof(Y) ? sizeof(X) : sizeof(Y))
+
+
+/**
+ * Copies the minimum of the sizes of T and S from S to T. */
+#define BYTECOPY(T, S)  memcpy(&(T), &(S), MINSIZE(T, S))
+
+
 [[gnu::always_inline]] static inline void swap_internal(size_t psize,
                                                         void *restrict tmp, 
                                                         void *restrict p1, 
