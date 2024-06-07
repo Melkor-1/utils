@@ -77,11 +77,9 @@
 #define CONCAT2_INDIRECT(A, B)      A ## B
 #define STRINGIFY_INDIRECT(A)       #A
 
-
 /**
  * Concatenate A to B together to form a single token. */
 #define CONCAT2(A, B)               CONCAT2_INDIRECT(A, B)
-
 
 /**
  * Macro that "char-ifies" its argument, e.g., CHARIFY(x) becomes 'x'.
@@ -89,13 +87,11 @@
  * X can only be in the set [0-9_A-Za-z]. */
 #define CHARIFY(X)                  CONCAT2(CHARIFY_, X)
 
-
 /**
  * Macro that "string-ifies" its argument, e.g., STRINGIFY(x) becomes "x".
  *
  * X - The unquoted string to stringify. */
 #define STRINGIFY(X)                STRINGIFY_INDIRECT(X)
-
 
 /**
  * Synthesises a name prefixed by PREFIX unique to the line on which it is used.
@@ -105,7 +101,6 @@
  * outside of them since there is no way to refer to a previously used unique
  * name. */
 #define UNIQUE_NAME(PREFIX)         CONCAT2(CONCAT2(PREFIX, _), __LINE__)     
-
 
 /**
  * C version of C++'s const_char.
@@ -118,7 +113,6 @@
  * cast meant. */
 #define CONST_CAST(T, EXPR)         ((T)(EXPR))
 
-
 /**
  * C version of C++'s static_cast. 
  *
@@ -130,7 +124,6 @@
  * cast meant. */
 #define STATIC_CAST(T, EXPR)        ((T)(EXPR))
 
-
 /**
  * Cast either from or to an integral type --- similar to C++'s 
  * reinterpret_cast, but for integers only.
@@ -141,7 +134,6 @@
  * Note: In C++, this would be done via reinterpret_cast, but it is not
  * posible to implement that in C that works for both pointers and integers. */
 #define INTEGER_CAST(T, EXPR)       ((T)(uintmax_t)(EXPR))
-
 
 /**
  * Cast either from or to a pointer type --- similar to C++'s
@@ -155,11 +147,29 @@
  * possible to implement that in C that works for both pointers and integers. */
 #define POINTER_CAST(T, EXPR)       ((T)(uintptr_t)(EXPR))
 
-
 /**
  * Embeds the given statements into a compound statement block. */
 #define BLOCK(...)                  do { __VA_ARGS__ } while (false)
 
+/**
+ * Asserts that this line of code is run at most once --- useful in
+ * initialization functions that must be called at most once. For example:
+ *
+ *     void initialize(void) {
+ *         ASSERT_RUN_ONCE();
+ *         // ...
+ *     } 
+ */
+#ifndef NDEBUG
+    #define ASSERT_RUN_ONCE()                   \
+        BLOCK(                                  \
+            static bool UNIQUE_NAME(called);    \
+            assert(!UNIQUE_NAME(called));       \
+            UNIQUE_NAME(called) = true;         \
+        )
+#else
+    #define ASSERT_RUN_ONCE()   (void)0
+#endif  /* NDEBUG */
 
 /**
  * Convenience macro for iterating N times. */
@@ -167,7 +177,6 @@
     for (size_t UNIQUE_NAME(i) = 0;                 \
          UNIQUE_NAME(i) < STATIC_CAST(size_t, (N)); \
          ++UNIQUE_NAME(i))
-
 
 /**
  * Like C11's _Static_assert() except that it can be used in an expression.
@@ -179,7 +188,6 @@
  * Always return true. */
 #define STATIC_ASSERT_EXPR(EXPR, MSG)   \
     (!!sizeof( struct { static_assert ( (EXPR), MSG ); char c; } ))
-
 
 /**
  * Checks (at compile-time) whether A is an array.
@@ -193,13 +201,11 @@
         default             : false \
     )
 
-
 /**
  * Gets the number of elements of the given array. */
 #define ARRAY_SIZE(ARRAY) (             \
     sizeof(ARRAY) / sizeof(0[ARRAY])    \
     * STATIC_ASSERT_EXPR( IS_ARRAY(ARRAY), #ARRAY "must be an array" ))
-
 
 /**
  * Convenience macro for iterating over the elements of a static array.
@@ -210,7 +216,6 @@
 #define FOREACH_ARRAY_ELEMENT(TYPE, VAR, ARRAY) \
     for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_SIZE(ARRAY); ++VAR)
 
-
 /* Repeatedly calls the function FN with each argument of type TYPE *. */
 #define FN_APPLY(TYPE, FN, ...)                         \
     BLOCK(                                              \
@@ -220,23 +225,30 @@
 		} while (false)                                 \
     )
 
+/**
+ * Calls the free() function individually on all arguments --- useful for
+ * replacing multiple individual calls to free() like these:
+ *
+ *      free(a);
+ *      free(b);
+ *      free(c);
+ *      free(d);
+ */
+#define FREE_ALL(...) FN_APPLY(void, free, __VA_ARGS__)
 
 /**
  * Takes two type names (or expressions representing types) and evalutes to the
  * size (in bytes) of the larget type. */
 #define MAXSIZE(X, Y)   (sizeof(X) > sizeof(Y) ? sizeof(X) : sizeof(Y))
 
-
 /**
  * Takes two type names (or expressions representing types) and evalutes to the
  * size (in bytes) of the smaller type. */
 #define MINSIZE(X, Y)   (sizeof(X) < sizeof(Y) ? sizeof(X) : sizeof(Y))
 
-
 /**
  * Copies the minimum of the sizes of T and S from S to T. */
 #define BYTECOPY(T, S)  memcpy(&(T), &(S), MINSIZE(T, S))
-
 
 [[gnu::always_inline]] static inline void swap_internal(size_t psize,
                                                         void *restrict tmp, 
@@ -247,7 +259,6 @@
     memcpy(p1, p2, psize);
     memcpy(p2, tmp, psize);
 }
-
 
 /**
  * Swaps the contents of A and B.
@@ -275,20 +286,6 @@
         &(A),                                                                 \
         &(B))
 
-
-/**
- * Calls the free() function individually on all arguments. This is useful for
- * replacing multiple calls to free() like these:
- *      free(a);
- *      free(b);
- *      free(c);
- *      free(d);
- *
- * with:
- *      Free_all(a, b, c, d); */
-#define FREE_ALL(...) FN_APPLY(void, free, __VA_ARGS__)
-
-
 /**
  * Increases cap by 2x and returns it.
  *
@@ -296,14 +293,12 @@
 [[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
 double_capacity(size_t cap);
 
-
 /**
  * Increases cap by 1.5x and returns it.
  *
  * grow_capacity() does not check for overflow. */
 [[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
 grow_capacity(size_t cap);
-
 
 /* The semantics of reproducible and gnu::const are a little different, but
  * that difference is not relevant here. 
@@ -343,13 +338,11 @@ grow_capacity(size_t cap)
                                                 const char fmt[restrict static 1], 
                                                 ...); 
 
-
 /**
  * See util_asprintf(). */
 int util_vasprintf(char **restrict strp,
                    const char fmt[restrict static 1], 
                    va_list ap);
-
 
 /**
  * The util_stpcpy() function copies the string pointed to by src (including 
@@ -361,7 +354,6 @@ int util_vasprintf(char **restrict strp,
  * address of the terminating null byte) rather than the beginning. */
 [[gnu::returns_nonnull]] char *util_stpcpy(char dest[restrict static 1],
                                            const char src[restrict static 1]);
-
 
 /* The util_basename() function break a null-terminated pathname string into 
  * filename component. 
@@ -401,7 +393,6 @@ int util_vasprintf(char **restrict strp,
 [[gnu::pure, gnu::returns_nonnull]] const char *util_strchrnul_const(
         const char s[static 1], 
         int c);
-
 
 /**
  * The util_strcasecmp() function performs a byte-by-byte comparison of the 
