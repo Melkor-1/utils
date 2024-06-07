@@ -171,17 +171,13 @@
 
 /**
  * When debugging trace is enabled, TRACE() prints to stderr with the formatted
- * message, source file name, line number, and function name.
- *
- * For TRACE() to work with no arguments, use: 
- *      TRACE("%s\n", "Foo"); 
- */
-#define TRACE(fmt, ...)                                         \
-    BLOCK(                                                      \
-        if (TRACE_ON) {                                         \
-            fprintf(stderr, "%s::%d::%s():: " fmt, __FILE__,    \
-                    __LINE__, __func__, __VA_ARGS__);           \
-        }                                                       \
+ * message, source file name, line number, and function name. */
+#define TRACE(fmt, ...)                                             \
+    BLOCK(                                                          \
+        if (TRACE_ON) {                                             \
+            fprintf(stderr, "%s::%d::%s():: " fmt, __FILE__,        \
+                    __LINE__, __func__, __VA_OPT__(,) __VA_ARGS__); \
+        }                                                           \
     )
 
 /**
