@@ -244,6 +244,9 @@
 /**
  * Checks (at compile-time) whether A is an array.
  *
+ * Note: IS_ARRAY() distinguishes between arrays and pointers, not between
+ *       arrays and arbitrary other types.
+ * 
  * Returns 1 (true) only if A is an array; 0 (false) elsewise. 
  *
  * See also: https://stackoverflow.com/a/77881417/99089 */
