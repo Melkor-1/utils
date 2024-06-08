@@ -386,12 +386,12 @@
  *
  * Note: The expressions must allow the & operator to be applicable. Thus it 
  * will not work on variables that are declared with the register storage class.
- * 
- * SWAP() would invoke undefined behavior if A and B are the same. */
+ * Moreover, it would also not work with VLAs, and would invoke undefined
+ * behavior if A and B are the same. */
 #define SWAP(A, B)                                                            \
     swap_internal(                                                            \
         (sizeof (A) * STATIC_ASSERT_EXPR(sizeof (A) == sizeof (B),            \
-            "Arguments of SWAP() must have same size and compatible types.")),\
+            #A " and " #B " must have same size and compatible types.")),\
         (char [sizeof *(1 ? &(A) : &(B))]) {0},                               \
         &(A),                                                                 \
         &(B))
@@ -482,6 +482,16 @@ grow_capacity(size_t cap)
 int util_vasprintf(char **restrict strp,
                    const char fmt[restrict static 1], 
                    va_list ap);
+
+/**
+ * The util_strnlen() function returns the number of bytes in the string 
+ * pointed to by s, excluding the terminating null byte ('\0'), but at most 
+ * n. In doing this, strnlen() looks only at the first n characters in the 
+ * string pointed to by s and never beyond s[n - 1].
+ *
+ * Returns strlen(s), if that is less than n, or n if there is no null termi‐
+ * -nating ('\0') among the first n characters pointed to by s. */
+size_t util_strnlen(size_t n, const char s[static n]);
 
 /**
  * The util_stpcpy() function copies the string pointed to by src (including 

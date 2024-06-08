@@ -4,6 +4,7 @@
  * 
  * Defines utility functions declared in util.h. */
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +62,12 @@ int util_asprintf(char **restrict strp, const char fmt[static 1], ...)
     return nwritten;
 }
 
+size_t util_strnlen(size_t n, const char s[static n])
+{
+    const char *const found = memchr(s, '\0', n);
+    return found ? (size_t)(found - s) : n;
+}
+
 char *util_stpcpy(char dest[restrict static 1],
                   const char src[restrict static 1])
 {
@@ -114,8 +121,6 @@ void fatal_error(char fmt[static 1], ...)
 }
 
 #ifdef TEST_MAIN
-
-#include <assert.h>
 
 int main(void)
 {
