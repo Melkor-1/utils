@@ -102,6 +102,17 @@ int util_strcasecmp(const char s[restrict static 1],
     return (p > q) - (p < q);
 }
 
+void fatal_error(char fmt[static 1], ...)
+{
+    assert(fmt);
+    
+    va_list args;
+    va_start(args);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+    exit(EXIT_FAILURE);
+}
+
 #ifdef TEST_MAIN
 
 #include <assert.h>

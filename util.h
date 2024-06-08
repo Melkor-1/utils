@@ -8,9 +8,11 @@
  * Declares utility constants, macros, and functions. */
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define CHARIFY_0   '0'
+/* Would these be better as `static constexpr unsigned char`s? */
+#define CHARIFY_0   '0' 
 #define CHARIFY_1   '1'
 #define CHARIFY_2   '2' 
 #define CHARIFY_3   '3'
@@ -96,10 +98,22 @@
 /**
  * Synthesises a name prefixed by PREFIX unique to the line on which it is used.
  *
- * All uses for a given PREFIX that refer to the same name must be on the same
- * line. This is not a problem within macro definitions, but would not work
- * outside of them since there is no way to refer to a previously used unique
- * name. */
+ * Notes: 
+ * 1) All uses for a given PREFIX that refer to the same name must be on the same
+ *    line. This is not a problem within macro definitions, but would not work
+ *    outside of them since there is no way to refer to a previously used unique
+ *    name. But if the intent is to have multiple "unique" names on a single line,
+ *    the value of PREFIX must be different. 
+ *
+ * 2) If UNIQUE_NAME is used within a macro and that macro does not expose
+ *    PREFIX (but picks one), then using the macro twice on the same line
+ *    (possibly nested, as in MAX(a, MAX(b, c)) ) will cause different
+ *    variables to end up with the same unique names.
+ *
+ * This is generally useful in macros to avoid any conflict with existing
+ * identifiers, and also because having a unique name allows you to use the
+ * same macro multiple times in the same scope or nested scopes and avoid
+ * "shadows" warnings. */
 #define UNIQUE_NAME(PREFIX)         CONCAT2(CONCAT2(PREFIX, _), __LINE__)     
 
 /**
@@ -148,14 +162,18 @@
 #define POINTER_CAST(T, EXPR)       ((T)(uintptr_t)(EXPR))
 
 /**
- * Expands to true if val_ is within the range of lo_ to hi_ (inclusive). */
-#define RANGE(val_, lo_, hi_)   \
-    (((val_) >= (lo_)) && ((val_) <= (hi_)))
+ * Expands to true if VAL_ is within the range of LO_ to HI_ (inclusive). 
+ *
+ * Note: RANGE() evaluates VAL_ more than once. */
+#define RANGE(VAL_, LO_, HI_)   \
+    (((VAL_) >= (LO_)) && ((VAL_) <= (HI_)))
 
 /**
- * Expands to true if val_ is within the range of lo_ to hi_ (exclusive). */
-#define RANGEM1(val_, lo_, hi_) \
-    (((val_) >= (lo_)) && ((val_) < (hi_)))
+ * Expands to true if VAL_ is within the range of LO_ to HI_ (exclusive). 
+ *
+ * Note: RANGE() evaluates VAL_ more than once. */ 
+#define RANGEM1(VAL_, LO_, HI_) \
+    (((VAL_) >= (LO_)) && ((VAL_) < (HI_)))
 
 /**
  * Embeds the given statements into a compound statement block. */
@@ -171,11 +189,15 @@
 
 /**
  * When debugging trace is enabled, TRACE() prints to stderr with the formatted
- * message, source file name, line number, and function name. */
-#define TRACE(fmt, ...)                                             \
+ * message, source file name, line number, and function name. 
+ *
+ * FMT - The printf() format string literal to use.
+ * ... - The printf() arguments. */
+#define TRACE(FMT, ...)                                             \
     BLOCK(                                                          \
         if (TRACE_ON) {                                             \
-            fprintf(stderr, "%s::%d::%s():: " fmt, __FILE__,        \
+            /* "" provides rudimentary type-checking. */            \
+            fprintf(stderr, "%s::%d::%s():: " FMT "", __FILE__,     \
                     __LINE__, __func__, __VA_OPT__(,) __VA_ARGS__); \
         }                                                           \
     )
@@ -188,7 +210,8 @@
  *         ASSERT_RUN_ONCE();
  *         // ...
  *     } 
- */
+ *
+ * Note: This implementation is not thread-safe. */
 #ifndef NDEBUG
     #define ASSERT_RUN_ONCE()                   \
         BLOCK(                                  \
@@ -221,20 +244,74 @@
 /**
  * Checks (at compile-time) whether A is an array.
  *
- * Returns true only if A is an array; false elsewise. 
+ * Returns 1 (true) only if A is an array; 0 (false) elsewise. 
  *
  * See also: https://stackoverflow.com/a/77881417/99089 */
 #define IS_ARRAY(T)                 \
-    _Generic( &(A),                 \
-        typeof(*T) (*)[]    : true, \
-        default             : false \
+    _Generic( &(T),                 \
+        typeof(*T) (*)[]    : 1,    \
+        default             : 0     \
     )
 
 /**
  * Gets the number of elements of the given array. */
-#define ARRAY_SIZE(ARRAY) (             \
+#define ARRAY_CARDINALITY(ARRAY) (             \
     sizeof(ARRAY) / sizeof(0[ARRAY])    \
     * STATIC_ASSERT_EXPR( IS_ARRAY(ARRAY), #ARRAY "must be an array" ))
+
+/**
+ * Checks (at compile-time) whether the type of T is a C string type, i.e.
+ * char *, or char const *.
+ *
+ * T - An expression. It is not evaluated.
+ *
+ * Returns 1 (true) only if T is a C string type, 0 (false) elsewise. */
+#define IS_C_STR(T)         \
+    _Generic((T),           \
+        char *      : 1,    \
+        char const *: 1,    \
+        default     : 0     \
+    )
+
+/**
+ * Strips trailing linefeed from S.
+ *
+ * S - The C string to strip the linefeed from. 
+ *
+ * Note: STRIP_LF() evalutes S more than once. */
+#define STRIP_LF(S)             (((S) + (STATIC_ASSERT_EXPR(IS_C_STR(S),   \
+                                    #S " must be a C string") - 1))[strcspn((S), "\r\n")]  = '\0')
+
+/**
+ * Gets the length of S.
+ *
+ * S - The C string literal to get the length of. 
+ *
+ * Note: STRLITLEN() evalutes S more than once. */
+#define STRLITLEN(S)            (ARRAY_CARDINALITY(S) - STATIC_ASSERT_EXPR(IS_C_STR(S), \
+                                    #S " must be a C string literal"))
+
+/**
+ * Advances S over all CHARS.
+ *
+ * S     - The C string pointer to advance.
+ * CHARS - A C string containing the characters to skip over.
+ * 
+ * Returns the updated S. 
+ *
+ * Note: SKIP_CHARS() evalutes S more than once. */
+#define SKIP_CHARS(S, CHARS)    ((S) += (STATIC_ASSERT_EXPR(IS_C_STR(S), #S " must be a C string") \
+                                    - 1) + strspn((S), (CHARS)))
+
+/**
+ * Advances S over all whitespace.
+ *
+ * S - The string pointer to advance.
+ *
+ * Returns the updated S. 
+ *
+ * Note: SKIP_WS() evalutes S more than once. */
+#define SKIP_WS(S)              SKIP_CHARS((S), " \n\t\r\f\v")
 
 /**
  * Convenience macro for iterating over the elements of a static array.
@@ -243,7 +320,7 @@
  * VAR   - The element loop variable.
  * ARRAY - The array to iterate over. */
 #define FOREACH_ARRAY_ELEMENT(TYPE, VAR, ARRAY) \
-    for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_SIZE(ARRAY); ++VAR)
+    for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_CARDINALITY(ARRAY); ++VAR)
 
 /* Repeatedly calls the function FN with each argument of type TYPE *. */
 #define FN_APPLY(TYPE, FN, ...)                         \
@@ -267,12 +344,16 @@
 
 /**
  * Takes two type names (or expressions representing types) and evalutes to the
- * size (in bytes) of the larget type. */
+ * size (in bytes) of the larget type. 
+ *
+ * MAXSIZE() never evalutes either X or Y. */
 #define MAXSIZE(X, Y)   (sizeof(X) > sizeof(Y) ? sizeof(X) : sizeof(Y))
 
 /**
  * Takes two type names (or expressions representing types) and evalutes to the
- * size (in bytes) of the smaller type. */
+ * size (in bytes) of the smaller type. 
+ *
+ * MINSIZE() never evalutes either X or Y. */
 #define MINSIZE(X, Y)   (sizeof(X) < sizeof(Y) ? sizeof(X) : sizeof(Y))
 
 /**
@@ -316,6 +397,24 @@
         &(B))
 
 /**
+ * A special-case of INTERNAL_ERROR() that prints an unexpected integer value.
+ *
+ * EXPR - The expression having the unexpected value. */
+#define UNEXPECTED_INT_VALUE(EXPR)                                      \
+    INTERNAL_ERROR("%lld (0x%llX): unexpected value for " #EXPR "\n",   \
+            (long long)(EXPR), (unsigned long long)(EXPR))
+
+/**
+ * A special-case of fatal_error() that additionally prints the file, line,
+ * and function name where an internal error occured.
+ *
+ * FMT - The printf() format string literal to use.
+ * ... - The printf() arguments. */
+#define INTERNAL_ERROR(FMT, ...)    \
+    fatal_error("%s::%d::%s(): internal error: " FMT "", __FILE__, __LINE__, \
+            __VA_OPT__(,) __VA_ARGS__)
+
+/**
  * Increases cap by 2x and returns it.
  *
  * double_capacity() does not check for overflow. */
@@ -344,6 +443,17 @@ double_capacity(size_t cap)
 grow_capacity(size_t cap)
 {
     return cap < 8 ? 8 : cap * 3 / 2;
+}
+
+/**
+ * Trims the memory region pointed by p to n bytes with realloc().
+ *
+ * Returns the trimmed memory region on success, or p on failure. */
+[[gnu::always_inline]] static inline void *safe_trim(void *p, size_t n)
+{
+    void *const p2 = realloc(p, n);
+
+    return p2 ? p2 : p;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -431,5 +541,12 @@ int util_vasprintf(char **restrict strp,
  * found, respectively, to be less than, to match, or be greater than t. */
 [[gnu::pure]] int util_strcasecmp(const char s[restrict static 1], 
                                   const char t[restrict static 1]);
+
+/**
+ * Prints an error message to standard error and exists with EXIT_FAILURE.
+ *
+ * fmt - The printf() format string literal to use.
+ * ... - The printf() arguments. */
+[[noreturn, gnu::format(printf, 1, 2)]] void fatal_error(char fmt[static 1], ...);
 
 #endif                          /* UTIL_H */
