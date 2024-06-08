@@ -46,7 +46,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline unsigned long long max_i_ulli(in
     return a < 0 ? b : (b > (unsigned long long) a ? b : (unsigned long long) a);
 }
 
-#define MAX_I(a, b)     _Generic((b),                                   \
+#define MAX_I(a, b)     _Generic((b) + 0,                               \
                             int:                    max_i_i,            \
                             unsigned int:           max_i_ui,           \
                             long int:               max_i_li,           \
@@ -87,7 +87,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline unsigned max_ui_lli(unsigned a, 
 }
 #endif
 
-#define MAX_UI(a, b)     _Generic((b),                                  \
+#define MAX_UI(a, b)     _Generic((b) + 0,                              \
                             int:                    max_ui_i,           \
                             unsigned int:           max_ui_ui,          \
                             long int:               max_ui_li,          \
@@ -119,7 +119,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline unsigned long long max_li_ulli(l
 }
 
 
-#define MAX_LI(a, b)    _Generic((b),                                   \
+#define MAX_LI(a, b)    _Generic((b) + 0,                               \
                             int:                    max_li_i,           \
                             unsigned int:           max_li_ui,          \
                             long int:               max_li_li,          \
@@ -153,7 +153,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline unsigned long max_uli_lli(unsign
 }
 #endif
 
-#define MAX_ULI(a, b)   _Generic((b),                                   \
+#define MAX_ULI(a, b)   _Generic((b) + 0,                               \
                             int:                    max_uli_i,          \
                             unsigned int:           max_uli_ui,         \
                             long int:               max_uli_li,         \
@@ -188,7 +188,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline unsigned long long max_lli_ulli(
     return a < 0 ? b : (b > (unsigned long long) a ? b : (unsigned long long) a);
 }
 
-#define MAX_LLI(a, b)   _Generic((b),                                   \
+#define MAX_LLI(a, b)   _Generic((b) + 0,                               \
                             int:                    max_lli_i,          \
                             unsigned int:           max_lli_ui,         \
                             long int:               max_lli_li,         \
@@ -223,13 +223,13 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline unsigned long long max_ulli_lli(
                             long long int:          max_ulli_lli,       \
                             unsigned long long int: max_ulli_ulli)((a), (b))
 
-#define MAX(a, b)       _Generic((a) + 0,                                       \
-                            int:                    MAX_I((a) + 0, (b) + 0),    \
-                            unsigned int:           MAX_UI((a) + 0, (b) + 0),   \
-                            long int:               MAX_LI((a) + 0, (b) + 0),   \
-                            unsigned long int:      MAX_ULI((a) + 0, (b) + 0),  \
-                            long long int:          MAX_LLI((a) + 0, (b) + 0),  \
-                            unsigned long long int: MAX_ULLI((a) + 0, (b) + 0))
+#define MAX(a, b)       _Generic((a) + 0,                               \
+                            int:                    MAX_I((a), (b)),    \
+                            unsigned int:           MAX_UI((a), (b)),   \
+                            long int:               MAX_LI((a), (b)),   \
+                            unsigned long int:      MAX_ULI((a), (b)),  \
+                            long long int:          MAX_LLI((a), (b)),  \
+                            unsigned long long int: MAX_ULLI((a), (b)))
 
 #undef ATTRIB_ALWAYS_INLINE
 #undef ATTRIB_CONST

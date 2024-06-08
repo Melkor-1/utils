@@ -52,7 +52,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline int min_i_ulli(int a, unsigned l
     return max_i_ulli(a, b) == b ? a : (int) b;
 }
 
-#define MIN_I(a, b)     _Generic((b),                                   \
+#define MIN_I(a, b)     _Generic((b) + 0,                               \
                             int:                    min_i_i,            \
                             unsigned int:           min_i_ui,           \
                             long int:               min_i_li,           \
@@ -87,7 +87,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long long min_ui_lli(unsigned a,
     #endif
 }
 
-#define MIN_UI(a, b)     _Generic((b),                                  \
+#define MIN_UI(a, b)     _Generic((b) + 0,                              \
                             int:                    min_ui_i,           \
                             unsigned int:           min_ui_ui,          \
                             long int:               min_ui_li,          \
@@ -114,7 +114,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long min_li_ulli(long a, unsigne
     return max_li_ulli(a, b) == b ? a : (long) b;
 }
 
-#define MIN_LI(a, b)    _Generic((b),                                   \
+#define MIN_LI(a, b)    _Generic((b) + 0,                               \
                             int:                    min_li_i,           \
                             unsigned int:           min_li_ui,          \
                             long int:               min_li_li,          \
@@ -145,7 +145,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long long min_uli_lli(unsigned l
     #endif
 }
 
-#define MIN_ULI(a, b)   _Generic((b),                                   \
+#define MIN_ULI(a, b)   _Generic((b) + 0,                               \
                             int:                    min_uli_i,          \
                             unsigned int:           min_uli_ui,         \
                             long int:               min_uli_li,         \
@@ -172,7 +172,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long long min_lli_ulli(long long
     return max_lli_ulli(a, b) == b ? a : (long long) b;
 }
 
-#define MIN_LLI(a, b)   _Generic((b),                                   \
+#define MIN_LLI(a, b)   _Generic((b) + 0,                               \
                             int:                    min_lli_i,          \
                             unsigned int:           min_lli_ui,         \
                             long int:               min_lli_li,         \
@@ -199,7 +199,7 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long long min_ulli_lli(unsigned 
     return min_lli_ulli(b, a);
 }
 
-#define MIN_ULLI(a, b)  _Generic((b),                                   \
+#define MIN_ULLI(a, b)  _Generic((b) + 0,                               \
                             int:                    min_ulli_i,         \
                             unsigned int:           min_ulli_ui,        \
                             long int:               min_ulli_li,        \
@@ -207,13 +207,14 @@ ATTRIB_ALWAYS_INLINE ATTRIB_CONST static inline long long min_ulli_lli(unsigned 
                             long long int:          min_ulli_lli,       \
                             unsigned long long int: min_ulli_ulli)((a), (b))
 
-#define MIN(a, b)       _Generic((a) + 0,                                       \
-                            int:                    MIN_I((a) + 0, (b) + 0),    \
-                            unsigned int:           MIN_UI((a) + 0, (b) + 0),   \
-                            long int:               MIN_LI((a) + 0, (b) + 0),   \
-                            unsigned long int:      MIN_ULI((a) + 0, (b) + 0),  \
-                            long long int:          MIN_LLI((a) + 0, (b) + 0),  \
-                            unsigned long long int: MIN_ULLI((a) + 0, (b) + 0))
+/* + 0 to implicitly promotes types shorter than int to int. */
+#define MIN(a, b)       _Generic((a) + 0,                               \
+                            int:                    MIN_I((a), (b)),    \
+                            unsigned int:           MIN_UI((a), (b)),   \
+                            long int:               MIN_LI((a), (b)),   \
+                            unsigned long int:      MIN_ULI((a), (b)),  \
+                            long long int:          MIN_LLI((a), (b)),  \
+                            unsigned long long int: MIN_ULLI((a), (b)))
 
 #undef ATTRIB_ALWAYS_INLINE
 #undef ATTRIB_CONST
