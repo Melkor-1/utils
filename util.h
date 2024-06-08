@@ -389,7 +389,6 @@
  *    compound literal is not a dynamic array.
  *  - It does not rely on VLAs, so it is more portable.
  *
- *
  * Note: The expressions must allow the & operator to be applicable. Thus it 
  * will not work on variables that are declared with the register storage class.
  * Moreover, it would also not work with VLAs, and would invoke undefined
