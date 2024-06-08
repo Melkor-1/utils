@@ -343,6 +343,12 @@
 #define FREE_ALL(...) FN_APPLY(void, free, __VA_ARGS__)
 
 /**
+ * Initializes dynamically allocated memory pointed to by PTR with values of a
+ * specified type and number of elements. */
+#define INIT(PTR, TYPE, NELEMS, ...) \
+    memcpy(PTR, (TYPE []) {__VA_ARGS__}, NELEMS * sizeof(TYPE))
+
+/**
  * Takes two type names (or expressions representing types) and evalutes to the
  * size (in bytes) of the larget type. 
  *
