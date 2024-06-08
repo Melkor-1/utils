@@ -401,6 +401,27 @@
         &(A),                                                                 \
         &(B))
 
+
+[[gnu::always_inline]] static inline void swap_generic_internal(size_t psize,
+                                                                void *p1,
+                                                                void *p2)
+{
+    char tmp[psize];
+    memcpy(tmp, p1, psize);
+    memcpy(p1, p2, psize);
+    memcpy(p2, tmp, psize);
+}
+
+/**
+ * Swaps the contents of A and B.
+ *
+ * SWAP_GEN() from SWAP() in 2 ways:
+ * - A VLA is a valid value for this macro.
+ * - It makes use of a VLA.
+ * - It does not have a compile-time check for same sizes, as the size of a VLA
+ *   can not be computed at compile-time. */
+#define SWAP_GENERIC(A, B)  swap_generic_internal(&(A), &(B), sizeof *(1, &(A), &B))
+
 /**
  * A special-case of INTERNAL_ERROR() that prints an unexpected integer value.
  *
