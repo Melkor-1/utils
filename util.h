@@ -235,6 +235,19 @@
 /**
  * Determines if an expression is compatible with a type.
  *
+ * Note that only an expression can be compared with a type. Two expressions
+ * or two type names can not be directly compared. 
+ *
+ * To compare two types, C99's compound literal can be used to create a literal
+ * of a given type like so:
+ *     
+ *     IS_COMPATIBLE((size_t){0}, unsigned long);
+ *
+ * To test two variables for type compatibility, C23's typeof can be used like
+ * so:
+ *     
+ *     IS_COMPATIBLE(x, typeof(y));
+ *
  * Expands to 1 (true) if X is compatible with T, else 0 (false). */
 #define IS_COMPATIBLE(X, T) \
     _Generic((X),           \
