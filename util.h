@@ -248,11 +248,11 @@
  *     
  *     IS_COMPATIBLE(x, typeof(y));
  *
- * Expands to 1 (true) if X is compatible with T, else 0 (false). */
-#define IS_COMPATIBLE(X, T) \
-    _Generic((X),           \
-            T:       1,     \
-            default: 0      \
+ * Expands to 1 (true) if EXPR is compatible with T, else 0 (false). */
+#define IS_COMPATIBLE(EXPR, T)  \
+    _Generic((EXPR),            \
+            T:       1,         \
+            default: 0          \
     )     
 
 /**
@@ -351,7 +351,11 @@
     for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_CARDINALITY(ARRAY); ++VAR)
 
 /**
- * Repeatedly calls the function FN with each argument of type TYPE *. */
+ * Maps a function to each argument of a type.
+ *
+ * TYPE - The type of argument.
+ * FN   - The function to map.
+ * ...  - The arguments. */
 #define FN_APPLY(TYPE, FN, ...)                         \
     BLOCK(                                              \
 		TYPE **list = (TYPE*[]){ __VA_ARGS__, nullptr};	\
@@ -371,8 +375,13 @@
 #define FREE_ALL(...) FN_APPLY(void, free, __VA_ARGS__)
 
 /**
- * Initializes dynamically allocated memory pointed to by PTR with values of a
- * specified type and number of elements. */
+ * Initializes memory pointed to by a pointer with values of a specified type 
+ * and number of elements. 
+ *
+ * PTR    - The pointer to memory to be initialized. 
+ * TYPE   - The type of the elements.
+ * NELEMS - The number of elements.
+ * ...    - The elements. */
 #define INIT(PTR, TYPE, NELEMS, ...) \
     memcpy(PTR, (TYPE []) {__VA_ARGS__}, NELEMS * sizeof(TYPE))
 
