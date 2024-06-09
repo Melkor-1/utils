@@ -162,14 +162,16 @@
 #define POINTER_CAST(T, EXPR)       ((T)(uintptr_t)(EXPR))
 
 /**
- * Expands to true if VAL_ is within the range of LO_ to HI_ (inclusive). 
+ * Expands to 1 (true) if VAL_ is within the range of LO_ to HI_ (inclusive),
+ * else 0 (false).
  *
  * Note: RANGE() evaluates VAL_ more than once. */
 #define RANGE(VAL_, LO_, HI_)   \
     (((VAL_) >= (LO_)) && ((VAL_) <= (HI_)))
 
 /**
- * Expands to true if VAL_ is within the range of LO_ to HI_ (exclusive). 
+ * Expands to 1 (true) if VAL_ is within the range of LO_ to HI_ (exclusive),
+ * else 0 (false).
  *
  * Note: RANGE() evaluates VAL_ more than once. */ 
 #define RANGEM1(VAL_, LO_, HI_) \
@@ -231,13 +233,23 @@
          ++UNIQUE_NAME(i))
 
 /**
+ * Determines if an expression is compatible with a type.
+ *
+ * Expands to 1 (true) if X is compatible with T, else 0 (false). */
+#define IS_COMPATIBLE(X, T) \
+    _Generic((X),           \
+            T:       1,     \
+            default: 0      \
+    )     
+
+/**
  * Like C11's _Static_assert() except that it can be used in an expression.
  *
  * EXPR - The expression to check.
  * MSG  - The string literal of the error message to print only if EXPR evalutes
  *        to false.
  *
- * Always return true. */
+ * Always returns true. */
 #define STATIC_ASSERT_EXPR(EXPR, MSG)   \
     (!!sizeof( struct { static_assert ( (EXPR), MSG ); char c; } ))
 
@@ -325,13 +337,13 @@
 #define FOREACH_ARRAY_ELEMENT(TYPE, VAR, ARRAY) \
     for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_CARDINALITY(ARRAY); ++VAR)
 
-/* Repeatedly calls the function FN with each argument of type TYPE *. */
+/**
+ * Repeatedly calls the function FN with each argument of type TYPE *. */
 #define FN_APPLY(TYPE, FN, ...)                         \
     BLOCK(                                              \
 		TYPE **list = (TYPE*[]){ __VA_ARGS__, nullptr};	\
 		for (size_t i = 0; list[i]; i++)	            \
 			FN(list[i]);	                            \
-		} while (false)                                 \
     )
 
 /**
@@ -383,10 +395,13 @@
  * Swaps the contents of A and B.
  *
  * Properties:
- *  - It evaluates each of A and B only once.
+ *  - It evaluates each of A and B only once (sizeof does not evaluate its
+ *    operand, except for VLAs, and _Generic does not evaluate its controlling
+ *    expression).
  *  - It has a compile-time check for the correct sizes, and prints a nice,
  *    user-friendly error message if the sizes are different.
- *  - It has a compile-time check for compatible types.
+ *  - It has a compile-time check for compatible types, and prints a nice,
+ *    user-friendly error message if the types are different.
  *  - It has no naming issue with a hidden variable.
  *  - The size of the temporary variable is computed at compile time, so the 
  *    compound literal is not a dynamic array.
@@ -396,14 +411,14 @@
  * will not work on variables that are declared with the register storage class.
  * Moreover, it would also not work with VLAs, and would invoke undefined
  * behavior if A and B are the same. */
-#define SWAP(A, B)                                                            \
-    swap_internal(                                                            \
-        (sizeof (A) * STATIC_ASSERT_EXPR(sizeof (A) == sizeof (B),            \
-            #A " and " #B " must have same size and compatible types.")),\
-        (char [sizeof *(1 ? &(A) : &(B))]) {0},                               \
-        &(A),                                                                 \
-        &(B))
-
+#define SWAP(A, B)                                                          \
+    swap_internal(                                                          \
+        (sizeof (A) * STATIC_ASSERT_EXPR( sizeof (A) == sizeof (B),         \
+            #A " and " #B " must have same size.")),                        \
+        (char [ STATIC_ASSERT_EXPR( IS_COMPATIBLE(A, typeof(B)),            \
+            #A " and " #B " must have compatible types.") * sizeof (A)]) {}, \
+        &(A),                                                               \
+        &(B))                               
 
 [[gnu::always_inline]] static inline void swap_generic_internal(size_t psize,
                                                                 void *p1,
