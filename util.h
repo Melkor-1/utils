@@ -472,6 +472,32 @@
             __VA_OPT__(,) __VA_ARGS__)
 
 /**
+ * The macro to which FPRINTF dispatches in the absence of arguments. */
+#define FPRINTF_II(STREAM, FMT) \
+    fputs(FMT, STREAM)
+
+/**
+ * The macro to which FPRINTF dispatches in the presence of arguments. */
+#define FPRINTF_III(STREAM, FMT, ...) \
+    fprintf(STREAM, FMT "", __VA_ARGS__)
+
+/**
+ * Augments calls to fprintf() such that two types of problem are detected:
+ * - If there is only a format argument and no others, we want to use fputs()
+ *   to avoid scanning the format at execution time.
+ * - If there are more than one arguments, it should be assured that the format
+ *   is a string literal, such that the contents can be parsed at compiel time.
+ *
+ * STREAM - The stream to print to.
+ * FMT    - The printf() format string to use. 
+ *
+ * If there were no arguments present beside FMT, then the return value is the
+ * same as what fputs() would return, else if is what fprintf() would return. */
+#define FPRINTF(STREAM, FMT, ...)           \
+    FPRINTF_II ## __VA_OPT__(I)             \
+    (STREAM, FMT __VA_OPT__(,) __VA_ARGS__)
+
+/**
  * Increases cap by 2x and returns it.
  *
  * double_capacity() does not check for overflow. */
