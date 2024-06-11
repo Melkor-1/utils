@@ -2,11 +2,12 @@
 #define UTIL_H 1
 
 /**
- * Author: Harith
+ * Author: Melkor-1
  * Date: Friday, June 7, 2024
  * 
  * Declares utility constants, macros, and functions. */
 
+#include <complex.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -162,20 +163,20 @@
 #define POINTER_CAST(T, EXPR)       ((T)(uintptr_t)(EXPR))
 
 /**
- * Expands to 1 (true) if VAL_ is within the range of LO_ to HI_ (inclusive),
+ * Expands to 1 (true) if VAL is within the range of LO to HI (inclusive),
  * else 0 (false).
  *
  * Note: RANGE() evaluates VAL_ more than once. */
-#define RANGE(VAL_, LO_, HI_)   \
-    (((VAL_) >= (LO_)) && ((VAL_) <= (HI_)))
+#define RANGE(VAL, LO, HI)   \
+    (((VAL) >= (LO)) && ((VAL) <= (HI)))
 
 /**
- * Expands to 1 (true) if VAL_ is within the range of LO_ to HI_ (exclusive),
+ * Expands to 1 (true) if VAL is within the range of LO to HI (exclusive),
  * else 0 (false).
  *
- * Note: RANGE() evaluates VAL_ more than once. */ 
-#define RANGEM1(VAL_, LO_, HI_) \
-    (((VAL_) >= (LO_)) && ((VAL_) < (HI_)))
+ * Note: RANGE() evaluates VAL more than once. */ 
+#define RANGEM1(VAL, LO, HI) \
+    (((VAL) >= (LO)) && ((VAL) < (HI)))
 
 /**
  * Embeds the given statements into a compound statement block. */
@@ -222,7 +223,7 @@
             UNIQUE_NAME(called) = true;         \
         )
 #else
-    #define ASSERT_RUN_ONCE()   (void)0
+    #define ASSERT_RUN_ONCE()       (void)0
 #endif  /* NDEBUG */
 
 /**
@@ -233,46 +234,66 @@
          ++UNIQUE_NAME(i))
 
 /**
- * Determines if an expression is compatible with a type.
+ * Checks (at compile-time) if an expression is compatible with a type.
  *
- * Note that only an expression can be compared with a type. Two expressions
- * or two type names can not be directly compared. 
+ * EXPR - An expression. It is not evaluted.
+ * T    - The type to check against.
  *
- * To compare two types, C99's compound literal can be used to create a literal
- * of a given type like so:
+ * Note: Only an expression can be compared with a type. Two expressions or 
+ * two type names can not be directly compared. 
+ *
+ * To compare two types, a compound literal can be used to create a literal of
+ * a given type like so:
  *     
  *     IS_COMPATIBLE((size_t){0}, unsigned long);
  *
- * To test two variables for type compatibility, C23's typeof can be used like
- * so:
+ * To test two variables for type compatibility, typeof can be used like so:
  *     
  *     IS_COMPATIBLE(x, typeof(y));
  *
- * Expands to 1 (true) if EXPR is compatible with T, else 0 (false). */
-#define IS_COMPATIBLE(EXPR, T)  \
-    _Generic((EXPR),            \
-            T:       1,         \
-            default: 0          \
+ * Also note that this would not work for arrays, nor when one argument is a
+ * pointer and another an array.
+ *
+ * Returns to 1 (true) if EXPR is compatible with T, 0 (false) elsewise. */
+#define IS_COMPATIBLE(EXPR, T) \
+    _Generic((EXPR),           \
+        T      : 1,            \
+        default: 0             \
     )     
 
 /**
- * Like C11's _Static_assert() except that it can be used in an expression.
+ * Checks (at compile-time) if T has type nullptr_t.
  *
- * EXPR - The expression to check.
- * MSG  - The string literal of the error message to print only if EXPR evalutes
- *        to false.
+ * T - An expression. It is not evaluted. 
  *
- * Always returns true. */
-#define STATIC_ASSERT_EXPR(EXPR, MSG)   \
-    (!!sizeof( struct { static_assert ( (EXPR), MSG ); char c; } ))
+ * Returns 1 (true) if T is the type nullptr_t, 0 (false) elsewise. */
+#define IS_NULLPTR(T) \
+    _Generic((T),     \
+        nullptr_t: 1, \
+        default  : 0  \
+    )
 
 /**
- * Checks (at compile-time) whether A is an array.
+ * Checks (at compile-time) if T has type FILE *.
+ *
+ * T - An expression. It is not evaluted. 
+ *
+ * Returns 1 (true) if T is the type FILE *, 0 (false) elsewise. */
+#define IS_FILE_PTR(T) \
+    _Generic((T),      \
+        FILE * : 1,    \
+        default: 0     \
+    )
+
+/**
+ * Checks (at compile-time) whether T is an array.
+ *
+ * T - An expression. It is not evaluted. 
  *
  * Note: IS_ARRAY() distinguishes between arrays and pointers, not between
  *       arrays and arbitrary other types.
  * 
- * Returns 1 (true) only if A is an array; 0 (false) elsewise. 
+ * Returns 1 (true) only if T is an array; 0 (false) elsewise. 
  *
  * See also: https://stackoverflow.com/a/77881417/99089 */
 #define IS_ARRAY(T)                 \
@@ -282,10 +303,186 @@
     )
 
 /**
- * Gets the number of elements of the given array. */
-#define ARRAY_CARDINALITY(ARRAY) (             \
-    sizeof(ARRAY) / sizeof(0[ARRAY])    \
-    * STATIC_ASSERT_EXPR( IS_ARRAY(ARRAY), #ARRAY "must be an array" ))
+ * Checks (at compile-time) whether A is a pointer.
+ *
+ * T - An expression. It is not evaluted. 
+ *
+ * Note: IS_POINTER() distinguishes between arrays and pointers, not between
+ *       pointers and arbitrary other types.
+ * 
+ * Returns 1 (true) only if T is a pointer; 0 (false) elsewise. 
+ *
+ * See also: https://stackoverflow.com/a/77881417/99089 */
+#define IS_POINTER(T)   !IS_ARRAY(T)
+
+/**
+ * Implements a "static if" similar to "if constexpr" in C++.
+ *
+ * EXPR - An expression (evaluated at compile-time).
+ * THEN - An expression returned only if EXPR is non-zero (true).
+ * ELSE - An expression returned only if EXPR is zero (false).
+ *
+ * Returns:
+ *     THEN only if EXPR is non-zero (true); or:
+ *     ELSE only if EXPR is zero (false). */
+#define STATIC_IF(EXPR, THEN, ELSE)     \
+    _Generic( &(char[1 + !!(EXPR)]){0}, \
+        char (*)[2]: (THEN),            \
+        char (*)[1]: (ELSE)             \
+    )
+
+/**
+ * Checks (at compile-time) whether char is signed or unsigned.
+ *
+ * Returns 1 (true) if char is signed, else 0 (false). */
+#define IS_CHAR_SIGNED  STATIC_IF((char)-1 < 0, 1, 0)
+
+/**
+ * Checks (at compile-time) whether the type of T is a signed type. 
+ *
+ * T - An expression. It is not evaluated. 
+ *
+ * Note: This would not detect _BitInt. 
+ *
+ * Returns 1 (true) only if T is a signed type; 0 (false) elsewise. */
+#define IS_SIGNED(T)                    \
+    _Generic((T),                       \
+        char         : IS_CHAR_SIGNED,  \
+        short int    : 1,               \
+        int          : 1,               \
+        long         : 1,               \
+        long long    : 1,               \
+        default      : 0                \
+    )
+
+/**
+ * Checks (at compile-time) whether the type of T is an unsigned type.
+ *
+ * T - An expression. It is not evaluated. 
+ *
+ * Note: This would not detect _BitInt. 
+ *
+ * Returns 1 (true) only if T is an unsigned type; 0 (false) elsewise. */
+#define IS_UNSIGNED(T)                            \
+    _Generic((T),                                 \
+        _Bool                  : 1,               \
+        char                   : !IS_CHAR_SIGNED, \
+        unsigned char          : 1,               \
+        unsigned short int     : 1,               \
+        unsigned int           : 1,               \
+        unsigned long int      : 1,               \
+        unsigned long long int : 1,               \
+        default                : 0                \
+    )
+
+/**
+ * Checks (at compile-time) whether the type of T is any integral type. 
+ *
+ * T - An expression. It is not evaluated. 
+ *
+ * Note: This would not detect _BitInt.
+ * 
+ * Returns 1 (true) if T is any integral type, 0 (false) elsewise. */
+#define IS_INTEGRAL(T)  (IS_SIGNED(T) || IS_UNSIGNED(T))
+
+/**
+ * Checks (at compile-time) whether the type of T is a floating-point type.
+ *
+ * T - An expression. It is not evaluated. 
+ *
+ * Returns 1 (true) if T is a floating-point type, 0 (false) elsewise. */
+#if defined(__STDC_IEC_60559_DFP__)         \
+    && defined(__STDC_IEC_60559_COMPLEX__)  \
+    && defined(_Imaginary_I)
+    #define IS_FLOATING_POINT(T)            \
+        _Generic((T),                       \
+            float                 : 1,      \
+            double                : 1,      \
+            long double           : 1,      \
+            float _Complex        : 1,      \
+            double _Complex       : 1,      \
+            long double _Complex  : 1,      \
+            float _Imaginary      : 1,      \
+            double _Imaginary     : 1,      \
+            long double _Imaginary: 1,      \
+            _Decimal32            : 1,      \
+            _Decimal64            : 1,      \
+            _Decimal128           : 1,      \
+            default               : 0       \
+        )
+#elif defined(__STDC_IEC_60559_COMPLEX__)   \
+      && defined(_Imaginary_I)              \
+      && !defined(__STDC_IEC_60559_DFP__)
+    #define IS_FLOATING_POINT(T)            \
+        _Generic((T),                       \
+            float                 : 1,      \
+            double                : 1,      \
+            long double           : 1,      \
+            float _Complex        : 1,      \
+            double _Complex       : 1,      \
+            long double _Complex  : 1,      \
+            float _Imaginary      : 1,      \
+            double _Imaginary     : 1,      \
+            long double _Imaginary: 1,      \
+            default               : 1       \
+        )
+#elif defined(__STDC_IEC_60559_COMPLEX__)   \
+      && defined(__STDC_IEC_60559_DFP__)    \
+      && !defined(_Imaginary_I)
+    #define IS_FLOATING_POINT(T)            \
+        _Generic((T),                       \
+            float                 : 1,      \
+            double                : 1,      \
+            long double           : 1,      \
+            float _Complex        : 1,      \
+            double _Complex       : 1,      \
+            long double _Complex  : 1,      \
+            _Decimal32            : 1,      \
+            _Decimal64            : 1,      \
+            _Decimal128           : 1,      \
+            default               : 0       \
+        )
+#elif defined(__STDC_IEC_60559_DFP__) && !defined(__STDC_IEC_60559_COMPLEX__)
+    #define IS_FLOATING_POINT(T)            \
+        _Generic((T),                       \
+            float               : 1,        \
+            double              : 1,        \
+            long double         : 1,        \
+            _Decimal32          : 1,        \
+            _Decimal64          : 1,        \
+            _Decimal128         : 1,        \
+            default             : 0         \
+        )
+#elif defined(__STDC_IEC_60559_COMPLEX__) && !defined(__STDC_IEC_60559_DFP__)
+    #define IS_FLOATING_POINT(T)            \
+        _Generic((T),                       \
+            float                 : 1,      \
+            double                : 1,      \
+            long double           : 1,      \
+            float _Complex        : 1,      \
+            double _Complex       : 1,      \
+            long double _Complex  : 1,      \
+            default               : 0       \
+        )
+#else
+    #define IS_FLOATING_POINT(T)            \
+        _Generic((T),                       \
+            float      : 1,                 \
+            double     : 1,                 \
+            long double: 1,                 \
+            default    : 0                  \
+        )
+#endif
+
+/**
+ * Checks (at compile-time) whether the type of T is any arithmetic type. 
+ *
+ * T - An expression. It is not evaluated. 
+ *
+ * Note: This would not detect _BitInt.
+ *
+ * Returns 1 (true) only if T is a C is any arithmetic type, 0 (false) elsewise. */
+#define IS_ARITHMETIC(T)    (IS_INTEGRAL(T) || IS_FLOATING_POINT(T))
 
 /**
  * Checks (at compile-time) whether the type of T is a C string type, i.e.
@@ -301,14 +498,74 @@
         default     : 0     \
     )
 
+/** 
+ * Checks (at compile-time) whether the type of T is compatible with the type
+ * of an array of length N.
+ *
+ * T - An expression. It is not evaluated.
+ * N - Length of array.
+ *
+ * Returns 1 (true) only if T is compatible with array of length N, 0 (false)
+ * elsewise. */
+#define IS_COMPATIBLE_WITH_ARRAY_OF_LENGTH_N(T, N)  \
+    _Generic(&(T),                                  \
+        typeof(*T) (*)[N]: 1,                       \
+        default          : 0                        \
+    )
+
+/**
+ * Checks (at compile-time) whether the type of T is variable-length array or
+ * an unspecified-length array.
+ *
+ * T - An expression. It is not evaluated.
+ *
+ * Returns 1 (true) only if T is a VLA or a ULA, 0 (false) elsewise.
+ *
+ * See also: https://stackoverflow.com/a/78597305/20017547 */
+#define IS_VLA_OR_ULA(T)                            \
+    (IS_COMPATIBLE_WITH_ARRAY_OF_LENGTH_N(T, 1)     \
+    && IS_COMPATIBLE_WITH_ARRAY_OF_LENGTH_N(T, 2))
+
+/**
+ * Checks (at compile-time) whether the type of T is a function type.
+ *
+ * T - An expression. It is not evaluated.
+ *
+ * Returns 1 (true) only if T is a function type, 0 (false) elsewise. 
+ *
+ * See also: https://stackoverflow.com/a/78601265/20017547 */
+#define IS_FUNCTION(T)      \
+    _Generic((T),           \
+        typeof(T)*: true,   \
+        default:    false   \
+    )
+
+/**
+ * Like C11's _Static_assert() except that it can be used in an expression.
+ *
+ * EXPR - The expression to check.
+ * MSG  - The string literal of the error message to print only if EXPR evalutes
+ *        to false.
+ *
+ * Always returns true. */
+#define STATIC_ASSERT_EXPR(EXPR, MSG) \
+    (!!sizeof( struct { static_assert ( (EXPR), MSG ); char c; } ))
+
+/**
+ * Gets the number of elements of the given array. */
+#define ARRAY_CARDINALITY(ARRAY) (      \
+    sizeof(ARRAY) / sizeof(0[ARRAY])    \
+    * STATIC_ASSERT_EXPR( IS_ARRAY(ARRAY), #ARRAY "must be an array" ))
+
 /**
  * Strips trailing linefeed from S.
  *
  * S - The C string to strip the linefeed from. 
  *
  * Note: STRIP_LF() evalutes S more than once. */
-#define STRIP_LF(S)             (((S) + (STATIC_ASSERT_EXPR(IS_C_STR(S),   \
-                                    #S " must be a C string") - 1))[strcspn((S), "\r\n")]  = '\0')
+#define STRIP_LF(S) \
+    (((S) + (STATIC_ASSERT_EXPR(IS_C_STR(S), \
+    #S " must be a C string") - 1))[strcspn((S), "\r\n")]  = '\0')
 
 /**
  * Gets the length of S.
@@ -316,8 +573,9 @@
  * S - The C string literal to get the length of. 
  *
  * Note: STRLITLEN() evalutes S more than once. */
-#define STRLITLEN(S)            (ARRAY_CARDINALITY(S) - STATIC_ASSERT_EXPR(IS_C_STR(S), \
-                                    #S " must be a C string literal"))
+#define STRLITLEN(S) \
+    (ARRAY_CARDINALITY(S"") - STATIC_ASSERT_EXPR(IS_C_STR(S), \
+    #S " must be a C string literal"))
 
 /**
  * Advances S over all CHARS.
@@ -328,8 +586,9 @@
  * Returns the updated S. 
  *
  * Note: SKIP_CHARS() evalutes S more than once. */
-#define SKIP_CHARS(S, CHARS)    ((S) += (STATIC_ASSERT_EXPR(IS_C_STR(S), #S " must be a C string") \
-                                    - 1) + strspn((S), (CHARS)))
+#define SKIP_CHARS(S, CHARS) \
+    ((S) += (STATIC_ASSERT_EXPR(IS_C_STR(S), #S " must be a C string") - 1) \
+     + strspn((S), (CHARS)))
 
 /**
  * Advances S over all whitespace.
@@ -339,7 +598,7 @@
  * Returns the updated S. 
  *
  * Note: SKIP_WS() evalutes S more than once. */
-#define SKIP_WS(S)              SKIP_CHARS((S), " \n\t\r\f\v")
+#define SKIP_WS(S)                  SKIP_CHARS((S), " \n\t\r\f\v")
 
 /**
  * Convenience macro for iterating over the elements of a static array.
@@ -372,7 +631,7 @@
  *      free(c);
  *      free(d);
  */
-#define FREE_ALL(...) FN_APPLY(void, free, __VA_ARGS__)
+#define FREE_ALL(...)               FN_APPLY(void, free, __VA_ARGS__)
 
 /**
  * Initializes memory pointed to by a pointer with values of a specified type 
@@ -390,18 +649,18 @@
  * size (in bytes) of the larget type. 
  *
  * MAXSIZE() never evalutes either X or Y. */
-#define MAXSIZE(X, Y)   (sizeof(X) > sizeof(Y) ? sizeof(X) : sizeof(Y))
+#define MAXSIZE(X, Y)               (sizeof(X) > sizeof(Y) ? sizeof(X) : sizeof(Y))
 
 /**
  * Takes two type names (or expressions representing types) and evalutes to the
  * size (in bytes) of the smaller type. 
  *
  * MINSIZE() never evalutes either X or Y. */
-#define MINSIZE(X, Y)   (sizeof(X) < sizeof(Y) ? sizeof(X) : sizeof(Y))
+#define MINSIZE(X, Y)               (sizeof(X) < sizeof(Y) ? sizeof(X) : sizeof(Y))
 
 /**
  * Copies the minimum of the sizes of T and S from S to T. */
-#define BYTECOPY(T, S)  memcpy(&(T), &(S), MINSIZE(T, S))
+#define BYTECOPY(T, S)              memcpy(&(T), &(S), MINSIZE(T, S))
 
 [[gnu::always_inline]] static inline void swap_internal(size_t psize,
                                                         void *restrict tmp, 
@@ -466,8 +725,8 @@
  * A special-case of INTERNAL_ERROR() that prints an unexpected integer value.
  *
  * EXPR - The expression having the unexpected value. */
-#define UNEXPECTED_INT_VALUE(EXPR)                                      \
-    INTERNAL_ERROR("%lld (0x%llX): unexpected value for " #EXPR "\n",   \
+#define UNEXPECTED_INT_VALUE(EXPR)                                    \
+    INTERNAL_ERROR("%lld (0x%llX): unexpected value for " #EXPR "\n", \
             (long long)(EXPR), (unsigned long long)(EXPR))
 
 /**
