@@ -880,7 +880,7 @@ size_t util_strnlen(size_t n, const char s[static n]);
  * Moreover, it would also not work with VLAs, and would invoke undefined
  * behavior if A and B are the same. */
 #define SWAP(A, B)                                                         \
-    memswap((sizeof *(1 ? &(A) : &(B))                                     \
+    util_memswap((sizeof *(1 ? &(A) : &(B))                                \
         * STATIC_ASSERT_EXPR(sizeof (A) == sizeof (B),                     \
         "Arguments of SWAP() must have same size and compatible types.")), \
         &(A),                                                              \
@@ -894,7 +894,7 @@ size_t util_strnlen(size_t n, const char s[static n]);
  * - It does not have a compile-time check for same sizes, as the size of a VLA
  *   can not be computed at compile-time. */
 #define SWAP_GENERIC(A, B) \
-    memswap(sizeof *(1 ? &(A) : &B), &(A), &(B))
+    util_memswap(sizeof *(1 ? &(A) : &B), &(A), &(B))
 
 /**
  * Prints an error message to standard error and exists with EXIT_FAILURE.
