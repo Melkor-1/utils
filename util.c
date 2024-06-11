@@ -1,5 +1,5 @@
 /**
- * Author: Harith
+ * Author: Melkor-1
  * Date: Friday, June 7, 2024
  * 
  * Defines utility functions declared in util.h. */
@@ -107,6 +107,21 @@ int util_strcasecmp(const char s[restrict static 1],
     } while (p == q && q != '\0');
 
     return (p > q) - (p < q);
+}
+
+void util_memswap(size_t psize,
+                  void *restrict p1, 
+                  void *restrict p2)
+{
+    unsigned char *a = p1;
+    unsigned char *b = p2;
+    unsigned char tmp;
+
+    while (psize--) {
+        tmp = *a;
+        *a++ = *b;
+        *b++ = tmp;
+    }
 }
 
 void fatal_error(char fmt[static 1], ...)

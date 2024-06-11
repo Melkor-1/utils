@@ -662,65 +662,6 @@
  * Copies the minimum of the sizes of T and S from S to T. */
 #define BYTECOPY(T, S)              memcpy(&(T), &(S), MINSIZE(T, S))
 
-[[gnu::always_inline]] static inline void swap_internal(size_t psize,
-                                                        void *restrict tmp, 
-                                                        void *restrict p1, 
-                                                        void *restrict p2)
-{
-    memcpy(tmp, p1, psize);
-    memcpy(p1, p2, psize);
-    memcpy(p2, tmp, psize);
-}
-
-/**
- * Swaps the contents of A and B.
- *
- * Properties:
- *  - It evaluates each of A and B only once (sizeof does not evaluate its
- *    operand, except for VLAs, and _Generic does not evaluate its controlling
- *    expression).
- *  - It has a compile-time check for the correct sizes, and prints a nice,
- *    user-friendly error message if the sizes are different.
- *  - It has a compile-time check for compatible types, and prints a nice,
- *    user-friendly error message if the types are different.
- *  - It has no naming issue with a hidden variable.
- *  - The size of the temporary variable is computed at compile time, so the 
- *    compound literal is not a dynamic array.
- *  - It does not rely on VLAs, so it is more portable.
- *
- * Note: The expressions must allow the & operator to be applicable. Thus it 
- * will not work on variables that are declared with the register storage class.
- * Moreover, it would also not work with VLAs, and would invoke undefined
- * behavior if A and B are the same. */
-#define SWAP(A, B)                                                          \
-    swap_internal(                                                          \
-        (sizeof (A) * STATIC_ASSERT_EXPR( sizeof (A) == sizeof (B),         \
-            #A " and " #B " must have same size.")),                        \
-        (char [ STATIC_ASSERT_EXPR( IS_COMPATIBLE(A, typeof(B)),            \
-            #A " and " #B " must have compatible types.") * sizeof (A)]) {}, \
-        &(A),                                                               \
-        &(B))                               
-
-[[gnu::always_inline]] static inline void swap_generic_internal(size_t psize,
-                                                                void *p1,
-                                                                void *p2)
-{
-    char tmp[psize];
-    memcpy(tmp, p1, psize);
-    memcpy(p1, p2, psize);
-    memcpy(p2, tmp, psize);
-}
-
-/**
- * Swaps the contents of A and B.
- *
- * SWAP_GEN() from SWAP() in 2 ways:
- * - A VLA is a valid value for this macro.
- * - It makes use of a VLA.
- * - It does not have a compile-time check for same sizes, as the size of a VLA
- *   can not be computed at compile-time. */
-#define SWAP_GENERIC(A, B)  swap_generic_internal(&(A), &(B), sizeof *(1, &(A), &B))
-
 /**
  * A special-case of INTERNAL_ERROR() that prints an unexpected integer value.
  *
@@ -761,9 +702,11 @@
  *
  * If there were no arguments present beside FMT, then the return value is the
  * same as what fputs() would return, else if is what fprintf() would return. */
-#define FPRINTF(STREAM, FMT, ...)           \
-    FPRINTF_II ## __VA_OPT__(I)             \
-    (STREAM, FMT __VA_OPT__(,) __VA_ARGS__)
+#define FPRINTF(STREAM, FMT, ...)                      \
+    FPRINTF_II ## __VA_OPT__(I)                        \
+    (STREAM + (STATIC_ASSERT_EXPR(IS_FILE_PTR(STREAM), \
+                #STREAM " must be a FILE *") - 1),     \
+     FMT __VA_OPT__(,) __VA_ARGS__)
 
 /**
  * Increases cap by 2x and returns it.
@@ -902,6 +845,52 @@ size_t util_strnlen(size_t n, const char s[static n]);
  * found, respectively, to be less than, to match, or be greater than t. */
 [[gnu::pure]] int util_strcasecmp(const char s[restrict static 1], 
                                   const char t[restrict static 1]);
+
+/**
+ * The util_memswap() function swaps the contents of two memory blocks pointed
+ * by p1 and p2. The first argument, psize, gives the size of the memory blocks.
+ *
+ * Note that memswap() can not swap variables whose address can not be taken. */
+[[gnu::nonnull]] void util_memswap(size_t psize,
+                                   void *restrict p1, 
+                                   void *restrict p2);
+
+/**
+ * Swaps the contents of A and B.
+ *
+ * Properties:
+ *  - It evaluates each of A and B only once (sizeof does not evaluate its
+ *    operand, except for VLAs, and _Generic does not evaluate its controlling
+ *    expression).
+ *  - It has a compile-time check for the correct sizes, and prints a nice,
+ *    user-friendly error message if the sizes are different.
+ *  - It has a compile-time check for compatible types, and prints a nice,
+ *    user-friendly error message if the types are different.
+ *  - It has no naming issue with a hidden variable.
+ *  - The size of the temporary variable is computed at compile time, so the 
+ *    compound literal is not a dynamic array.
+ *  - It does not rely on VLAs, so it is more portable.
+ *
+ * Note: The expressions must allow the & operator to be applicable. Thus it 
+ * will not work on variables that are declared with the register storage class.
+ * Moreover, it would also not work with VLAs, and would invoke undefined
+ * behavior if A and B are the same. */
+#define SWAP(A, B)                                                         \
+    memswap((sizeof *(1 ? &(A) : &(B))                                     \
+        * STATIC_ASSERT_EXPR(sizeof (A) == sizeof (B),                     \
+        "Arguments of SWAP() must have same size and compatible types.")), \
+        &(A),                                                              \
+        &(B))
+
+/**
+ * Swaps the contents of A and B.
+ *
+ * SWAP_GEN() from SWAP() in 2 ways:
+ * - A VLA is a valid value for this macro.
+ * - It does not have a compile-time check for same sizes, as the size of a VLA
+ *   can not be computed at compile-time. */
+#define SWAP_GENERIC(A, B) \
+    memswap(sizeof *(1 ? &(A) : &B), &(A), &(B))
 
 /**
  * Prints an error message to standard error and exists with EXIT_FAILURE.
