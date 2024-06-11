@@ -228,9 +228,10 @@
 
 /**
  * Convenience macro for iterating N times. */
-#define FOR_N_TIMES(N)                              \
-    for (size_t UNIQUE_NAME(i) = 0;                 \
-         UNIQUE_NAME(i) < STATIC_CAST(size_t, (N)); \
+#define FOR_N_TIMES(N)                                                        \
+    for (size_t UNIQUE_NAME(i) = 0;                                           \
+         UNIQUE_NAME(i) < STATIC_CAST(size_t, (N));                           \
+         STATIC_ASSERT_EXPR(IS_INTEGRAL(N), #N " must be an integral type."), \
          ++UNIQUE_NAME(i))
 
 /**
@@ -601,13 +602,12 @@
 #define SKIP_WS(S)                  SKIP_CHARS((S), " \n\t\r\f\v")
 
 /**
- * Convenience macro for iterating over the elements of a static array.
+ * Convenience macro for iterating over the elements of a fixed-length array.
  *
- * TYPE  - The type of element.
  * VAR   - The element loop variable.
  * ARRAY - The array to iterate over. */
-#define FOREACH_ARRAY_ELEMENT(TYPE, VAR, ARRAY) \
-    for (TYPE const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_CARDINALITY(ARRAY); ++VAR)
+#define FOREACH_ARRAY_ELEMENT(VAR, ARRAY) \
+    for (typeof(*ARRAY) const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_CARDINALITY(ARRAY); ++VAR)
 
 /**
  * Maps a function to each argument of a type.
