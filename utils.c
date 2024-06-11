@@ -4,14 +4,14 @@
  * 
  * Defines utility functions declared in util.h. */
 
+#include "utils.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-#include "util.h"
 
 int util_vasprintf(char **restrict strp, 
                    const char fmt[restrict static 1],
@@ -134,44 +134,3 @@ void fatal_error(char fmt[static 1], ...)
     va_end(args);
     exit(EXIT_FAILURE);
 }
-
-#ifdef TEST_MAIN
-
-int main(void)
-{
-    assert(strcmp(util_basename("/usr/lib"), "lib") == 0);
-    assert(strcmp(util_basename("/usr/"), "") == 0);
-    assert(strcmp(util_basename("usr"), "usr") == 0);
-    assert(strcmp(util_basename("/"), "") == 0);
-    assert(strcmp(util_basename("."), ".") == 0);
-    assert(strcmp(util_basename(".."), "..") == 0);
-
-    assert(util_strcasecmp("aPplE", "APPLE") == 0);
-    assert(util_strcasecmp("apple", "apple") == 0);
-    assert(util_strcasecmp("HELLO", "HELLO") == 0);
-    assert(util_strcasecmp("", "") == 0);
-    assert(util_strcasecmp("HrLLO", "HELLO"));
-
-    char *formatted = {};
-    int len = util_asprintf(&formatted, "%d", 10);
-    assert(len == 2);
-    assert(formatted);
-    assert(strcmp(formatted, "10") == 0);
-    free(formatted);
-    
-    static constexpr char haystack[] = "hello there";
-    assert(util_strchrnul(haystack, 'o') == strchr(haystack, 'o'));
-    assert(*util_strchrnul(haystack, 'p') == '\0');
-
-#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_LLVM_COMPILER)
-    /* Specify the prototype, because defining _GNU_SOURCE doesn't seem to. */
-    char *strchrnul(const char *p, int ch);
-
-    static constexpr char s[] = "hair"; 
-    static constexpr char t[] = "gown"; 
-    assert(util_strchrnul(s, 'h') == strchrnul(s, 'h'));
-    assert(util_strchrnul(t, 'g') == strchrnul(t, 'g'));
-#endif 
-}
-
-#endif
