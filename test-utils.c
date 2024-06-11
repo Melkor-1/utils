@@ -101,6 +101,12 @@ void test_charify(void)
     test(CHARIFY(z) == 'z');
 }
 
+void test_concat2(void)
+{
+    /* CHARIFY() makes use of CONCAT2(). It has been tested enough already. */
+    test(strcmp(STRINGIFY(CONCAT2(am, nobody)), "amnobody") == 0);
+}
+
 void test_stringify(void)
 {
     test(strcmp(STRINGIFY(0), "0") == 0);
@@ -788,6 +794,7 @@ void test_swap(void)
 int main(void) 
 {
     test_charify();
+    test_concat2();
     test_stringify();
     test_range();
     test_rangem1();
