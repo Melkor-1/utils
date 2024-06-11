@@ -556,7 +556,7 @@
  * Gets the number of elements of the given array. */
 #define ARRAY_CARDINALITY(ARRAY) (      \
     sizeof(ARRAY) / sizeof(0[ARRAY])    \
-    * STATIC_ASSERT_EXPR( IS_ARRAY(ARRAY), #ARRAY "must be an array" ))
+    * STATIC_ASSERT_EXPR( IS_ARRAY(ARRAY), #ARRAY " must be an array" ))
 
 /**
  * Strips trailing linefeed from S.
@@ -575,7 +575,7 @@
  *
  * Note: STRLITLEN() evalutes S more than once. */
 #define STRLITLEN(S) \
-    (ARRAY_CARDINALITY(S"") - STATIC_ASSERT_EXPR(IS_C_STR(S), \
+    (ARRAY_CARDINALITY(S) - STATIC_ASSERT_EXPR(IS_C_STR(S), \
     #S " must be a C string literal"))
 
 /**
@@ -588,8 +588,7 @@
  *
  * Note: SKIP_CHARS() evalutes S more than once. */
 #define SKIP_CHARS(S, CHARS) \
-    ((S) += (STATIC_ASSERT_EXPR(IS_C_STR(S), #S " must be a C string") - 1) \
-     + strspn((S), (CHARS)))
+    ((S) += strspn((S), (CHARS)))
 
 /**
  * Advances S over all whitespace.
@@ -599,7 +598,8 @@
  * Returns the updated S. 
  *
  * Note: SKIP_WS() evalutes S more than once. */
-#define SKIP_WS(S)                  SKIP_CHARS((S), " \n\t\r\f\v")
+#define SKIP_WS(S) \
+    SKIP_CHARS((S), " \n\t\r\f\v")
 
 /**
  * Convenience macro for iterating over the elements of a fixed-length array.
@@ -711,12 +711,16 @@
 /**
  * Increases cap by 2x and returns it.
  *
+ * If cap is less than 8, bumps it up to 8.
+ *
  * double_capacity() does not check for overflow. */
 [[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
 double_capacity(size_t cap);
 
 /**
  * Increases cap by 1.5x and returns it.
+ *
+ * If cap is less than, bumps it up to 8.
  *
  * grow_capacity() does not check for overflow. */
 [[reproducible, gnu::always_inline, gnu::const]] static inline size_t 
