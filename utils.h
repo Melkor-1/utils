@@ -825,8 +825,11 @@
     BLOCK(                                              \
         void *stopper = (int[]){0};                     \
 		TYPE **list = (TYPE*[]){ __VA_ARGS__, stopper};	\
-		for (size_t i = 0; list[i]; i++)	            \
-			FN(list[i]);	                            \
+		for (size_t i = 0; list[i]; i++) {	            \
+			STATIC_ASSERT_EXPR(IS_FUNCTION(FN),         \
+                #FN " should be a function.");          \
+            FN(list[i]);	                            \
+        }                                               \
     )
 
 /**
