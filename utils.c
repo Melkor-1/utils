@@ -8,10 +8,10 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 int util_vasprintf(char **restrict strp, 
                    const char fmt[restrict static 1],
