@@ -182,6 +182,11 @@ void test_stringify(void)
 void test_unique_name(void)
 {
     test(strcmp(STRINGIFY(UNIQUE_NAME(var)), "var_" STRINGIFY(__LINE__)) == 0);
+
+    const char *const c = STRINGIFY(UNIQUE_NAME(var));
+    const char *const b = STRINGIFY(UNIQUE_NAME(var));
+
+    test(strcmp(c, b) != 0);
 }
 
 void test_range(void) 
