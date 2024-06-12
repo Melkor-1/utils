@@ -809,6 +809,8 @@
 /**
  * Convenience macro for iterating over the elements of a fixed-length array.
  *
+ * Note: Compound literal array is not a valid value for ARRAY.
+ * 
  * VAR   - The element loop variable.
  * ARRAY - The array to iterate over. */
 #define FOREACH_ARRAY_ELEMENT(VAR, ARRAY) \
