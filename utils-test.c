@@ -1,10 +1,14 @@
 #include "utils.h"
 
-#include <string.h>
 #include <complex.h>
-#include <stdint.h>
+#include <signal.h>
+#include <inttypes.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <wchar.h>
 
 /* Current versions of gcc and clang support -std=c2x which sets 
  * __STDC_VERSION__ to this placeholder value. GCC 14.1 does not set
@@ -175,6 +179,11 @@ void test_stringify(void)
     test(strcmp(STRINGIFY(abcdefghijklmnopqrstuvwxyz), "abcdefghijklmnopqrstuvwxyz") == 0);
 }
 
+void test_unique_name(void)
+{
+    test(strcmp(STRINGIFY(UNIQUE_NAME(var)), "var_" STRINGIFY(__LINE__)) == 0);
+}
+
 void test_range(void) 
 {
     test(RANGE(5, 1, 10) == 1);
@@ -329,11 +338,36 @@ void test_is_signed(void)
     test(IS_SIGNED((int){0}));
     test(IS_SIGNED((long int){0}));
     test(IS_SIGNED((long long int){0}));
+
+    test(IS_SIGNED((ptrdiff_t){0}));
+    test(IS_SIGNED((intmax_t){0}));
+    test(IS_SIGNED((intptr_t){0}));
+    test(IS_SIGNED((int64_t){0}));
+    test(IS_SIGNED((int32_t){0}));
+    test(IS_SIGNED((int16_t){0}));
+    test(IS_SIGNED((int8_t){0}));
+    test(IS_SIGNED((int_least64_t){0}));
+    test(IS_SIGNED((int_least32_t){0}));
+    test(IS_SIGNED((int_least16_t){0}));
+    test(IS_SIGNED((int_least8_t){0}));
+    test(IS_SIGNED((int_fast64_t){0}));
+    test(IS_SIGNED((int_fast32_t){0}));
+    test(IS_SIGNED((int_fast16_t){0}));
+    test(IS_SIGNED((int_fast8_t){0}));
+
+    test(IS_SIG_ATOMIC_T_SIGNED ? IS_SIGNED((sig_atomic_t){2}) : !IS_SIGNED((sig_atomic_t){0}));
+    test(IS_WINT_T_SIGNED ? IS_SIGNED((wint_t){0}) : !IS_SIGNED((wint_t){0}));
+    test(IS_WCHAR_T_SIGNED ? IS_SIGNED((wchar_t){0}) : !IS_SIGNED((wchar_t){0})); 
 }
 
 void test_is_unsigned(void)
 {
     test(IS_CHAR_SIGNED ? !IS_UNSIGNED((char){0}) : IS_UNSIGNED((char){0}));
+
+    test(!IS_UNSIGNED((short int){0}));
+    test(!IS_UNSIGNED((int){0}));
+    test(!IS_UNSIGNED((long int){0}));
+    test(!IS_UNSIGNED((long long int){0}));
 
     test(!IS_UNSIGNED((char){0}));
     test(!IS_UNSIGNED((short int){0}));
@@ -346,6 +380,26 @@ void test_is_unsigned(void)
     test(IS_UNSIGNED((unsigned int){0}));
     test(IS_UNSIGNED((unsigned long int){0}));
     test(IS_UNSIGNED((unsigned long long int){0}));
+
+    test(IS_UNSIGNED((size_t){0}));
+    test(IS_UNSIGNED((uintmax_t){0}));
+    test(IS_UNSIGNED((uintptr_t){0}));
+    test(IS_UNSIGNED((uint64_t){0}));
+    test(IS_UNSIGNED((uint32_t){0}));
+    test(IS_UNSIGNED((uint16_t){0}));
+    test(IS_UNSIGNED((uint8_t){0}));
+    test(IS_UNSIGNED((uint_least64_t){0}));
+    test(IS_UNSIGNED((uint_least32_t){0}));
+    test(IS_UNSIGNED((uint_least16_t){0}));
+    test(IS_UNSIGNED((uint_least8_t){0}));
+    test(IS_UNSIGNED((uint_fast64_t){0}));
+    test(IS_UNSIGNED((uint_fast32_t){0}));
+    test(IS_UNSIGNED((uint_fast16_t){0}));
+    test(IS_UNSIGNED((uint_fast8_t){0}));
+
+    test(IS_SIG_ATOMIC_T_SIGNED ? !IS_UNSIGNED((sig_atomic_t){2}) : IS_UNSIGNED((sig_atomic_t){0}));
+    test(IS_WINT_T_SIGNED ? !IS_UNSIGNED((wint_t){0}) : IS_UNSIGNED((wint_t){0}));
+    test(IS_WCHAR_T_SIGNED ? !IS_UNSIGNED((wchar_t){0}) : IS_UNSIGNED((wchar_t){0})); 
 }
 
 void test_is_integral(void)
@@ -589,15 +643,37 @@ void test_skip_ws(void)
 void test_foreach_array_element(void) 
 {
     size_t sum = 0;
+    size_t values[] =  {1, 2, 3, 4, 5};
 
-    FOREACH_ARRAY_ELEMENT(elem, ((size_t []){1, 2, 3, 4, 5})) { sum += *elem; }
+    FOREACH_ARRAY_ELEMENT(elem, (values)) { sum += *elem; }
     test(sum == 15); 
 
-    char result[6] = ""; 
+    char result[6] = {}; 
     char *ptr = result;
+    char chars[] = {'a', 'b', 'c', 'd', 'e'};
 
-    FOREACH_ARRAY_ELEMENT(elem, ((char []){'a', 'b', 'c', 'd', 'e'})) { *ptr++ = *elem; }
+    FOREACH_ARRAY_ELEMENT(elem, chars) { *ptr++ = *elem; }
     test(strcmp(result, "abcde") == 0); 
+}
+
+void set_to_nullptr(int **p)
+{
+    *p = nullptr;
+}
+
+void test_apply_fn(void)
+{
+    int *a;
+    int *b;
+    int *c;
+    int *d;
+
+    FN_APPLY(int *, set_to_nullptr, &a, &b, &c, &d);
+
+    test(!a);
+    test(!b);
+    test(!c);
+    test(!d);
 }
 
 void test_init(void) 
@@ -791,10 +867,47 @@ void test_swap(void)
     test(strcmp(v, "mango") == 0);
 }
 
+void test_swap_generic(void)
+{
+    int a = 10;
+    int b = 20;
+
+    SWAP_GENERIC(a, b);
+    test(a == 20);
+    test(b == 10);
+
+    char s[10] = "hello";
+    char t[10] = "world";
+
+    SWAP_GENERIC(s, t);
+    test(strcmp(s, "world") == 0);
+    test(strcmp(t, "hello") == 0);
+
+    const char *u = "mango";
+    const char *v = "banana";
+
+    SWAP_GENERIC(u, v);
+    test(strcmp(u, "banana") == 0);
+    test(strcmp(v, "mango") == 0);
+    
+    size_t n = 10;
+    char x[n];
+    char y[n];
+
+    memset(x, '1', n);
+    memset(y, '2', n);
+
+    SWAP_GENERIC(x, y);
+
+    test(memcmp(x, "2222222222", 10) == 0);
+    test(memcmp(y, "1111111111", 10) == 0);
+}
+
 int main(void) 
 {
     test_charify();
     test_concat2();
+    test_unique_name();
     test_stringify();
     test_range();
     test_rangem1();
@@ -818,7 +931,7 @@ int main(void)
     test_strlitlen();
     test_skip_chars();
     test_skip_ws();
-    test_for_n_times();
+    test_foreach_array_element();
     test_init();
     test_maxsize();
     test_minsize();
@@ -835,6 +948,7 @@ int main(void)
     test_util_strcasecmp();
     test_util_memswap();
     test_swap();
+    test_swap_generic();
 
     return EXIT_SUCCESS;
 }
