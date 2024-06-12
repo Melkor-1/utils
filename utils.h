@@ -815,14 +815,16 @@
     for (typeof(*ARRAY) const *VAR = (ARRAY); VAR < (ARRAY) + ARRAY_CARDINALITY(ARRAY); ++VAR)
 
 /**
- * Maps a function to each argument of a type.
+ * The machinery to vectorize any function that takes any type of pointer.
  *
- * TYPE - The type of argument.
- * FN   - The function to map.
+ * TYPE - The type of pointer the function takes. For a function that takes in
+ *        a void *, this shall be void.
+ * FN   - The function to vectorize.
  * ...  - The arguments. */
 #define FN_APPLY(TYPE, FN, ...)                         \
     BLOCK(                                              \
-		TYPE **list = (TYPE*[]){ __VA_ARGS__, nullptr};	\
+        void *stopper = (int[]){0};                     \
+		TYPE **list = (TYPE*[]){ __VA_ARGS__, stopper};	\
 		for (size_t i = 0; list[i]; i++)	            \
 			FN(list[i]);	                            \
     )
