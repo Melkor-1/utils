@@ -8,9 +8,14 @@
  * Declares utility constants, macros, and functions. */
 
 #include <complex.h>
+#include <inttypes.h>
+#include <signal.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <wchar.h>
 
 /* Would these be better as `static constexpr unsigned char`s? */
 #define CHARIFY_0   '0' 
@@ -336,7 +341,116 @@
  * Checks (at compile-time) whether char is signed or unsigned.
  *
  * Returns 1 (true) if char is signed, else 0 (false). */
-#define IS_CHAR_SIGNED  STATIC_IF((char)-1 < 0, 1, 0)
+#define IS_CHAR_SIGNED          STATIC_IF((char)-1 < 0, 1, 0)
+
+/**
+ * Checks (at compile-time) whether sig_atomic_t is signed or unsigned.
+ *
+ * Returns 1 (true) if sig_atomic_t is signed, else 0 (false). */
+#define IS_SIG_ATOMIC_T_SIGNED  STATIC_IF((sig_atomic_t)-1 < 0, 1, 0)
+
+/**
+ * Checks (at compile-time) whether wint_t is signed or unsigned.
+ *
+ * Returns 1 (true) if wint_t is signed, else 0 (false). */
+#define IS_WINT_T_SIGNED        STATIC_IF((wint_t)-1 < 0, 1, 0)
+
+/**
+ * Checks (at compile-time) whether wchar_t is signed or unsigned.
+ *
+ * Returns 1 (true) if wchar_t is signed, else 0 (false). */
+#define IS_WCHAR_T_SIGNED       STATIC_IF((wchar_t)-1 < 0, 1, 0)
+
+#define IS_SIGNED15(T)                                  \
+    _Generic((T),                                       \
+        wchar_t               : IS_WCHAR_T_SIGNED,      \
+        default               : 0                       \
+    )
+
+#define IS_SIGNED14(T)                                  \
+    _Generic((T),                                       \
+        wint_t                : IS_WINT_T_SIGNED,       \
+        default               : IS_SIGNED15(T)          \
+    )
+
+#define IS_SIGNED13(T)                                  \
+    _Generic((T),                                       \
+        sig_atomic_t          : IS_SIG_ATOMIC_T_SIGNED, \
+        default               : IS_SIGNED14(T)          \
+    )
+
+#define IS_SIGNED12(T)                                  \
+    _Generic((T),                                       \
+        int_fast64_t          : 1,                      \
+        default               : IS_SIGNED13(T)          \
+    )
+
+#define IS_SIGNED11(T)                                  \
+    _Generic((T),                                       \
+        int_fast32_t          : 1,                      \
+        default               : IS_SIGNED12(T)          \
+    )
+
+#define IS_SIGNED10(T)                                  \
+    _Generic((T),                                       \
+        int_fast16_t          : 1,                      \
+        default               : IS_SIGNED11(T)          \
+    )
+
+#define IS_SIGNED9(T)                                   \
+    _Generic((T),                                       \
+        int_fast8_t           : 1,                      \
+        default               : IS_SIGNED10(T)          \
+    )
+
+#define IS_SIGNED8(T)                                   \
+    _Generic((T),                                       \
+        int_least64_t          : 1,                     \
+        default                : IS_SIGNED9(T)          \
+    )
+#define IS_SIGNED7(T)                                   \
+    _Generic((T),                                       \
+        int_least32_t          : 1,                     \
+        default                : IS_SIGNED8(T)          \
+    )
+#define IS_SIGNED6(T)                                   \
+    _Generic((T),                                       \
+        int_least16_t          : 1,                     \
+        default                : IS_SIGNED7(T)          \
+    )
+
+#define IS_SIGNED5(T)                                   \
+    _Generic((T),                                       \
+        int_least8_t           : 1,                     \
+        default                : IS_SIGNED6(T)          \
+    )
+
+#define IS_SIGNED4(T)                                   \
+    _Generic((T),                                       \
+        int8_t                 : 1,                     \
+        int16_t                : 1,                     \
+        int32_t                : 1,                     \
+        int64_t                : 1,                     \
+        default                : IS_SIGNED5(T)          \
+    )
+
+#define IS_SIGNED3(T)                                   \
+    _Generic((T),                                       \
+        intptr_t               : 1,                     \
+        default                : IS_SIGNED4(T)          \
+    )
+
+#define IS_SIGNED2(T)                                   \
+    _Generic((T),                                       \
+        intmax_t               : 1,                     \
+        default                : IS_SIGNED3(T)          \
+    )
+
+#define IS_SIGNED1(T)                                   \
+    _Generic((T),                                       \
+        ptrdiff_t              : 1,                     \
+        default                : IS_SIGNED2(T)          \
+    )
 
 /**
  * Checks (at compile-time) whether the type of T is a signed type. 
@@ -346,34 +460,125 @@
  * Note: This would not detect _BitInt. 
  *
  * Returns 1 (true) only if T is a signed type; 0 (false) elsewise. */
-#define IS_SIGNED(T)                    \
-    _Generic((T),                       \
-        char         : IS_CHAR_SIGNED,  \
-        short int    : 1,               \
-        int          : 1,               \
-        long         : 1,               \
-        long long    : 1,               \
-        default      : 0                \
+#define IS_SIGNED(T)                                    \
+    _Generic((T),                                       \
+        char                   : IS_CHAR_SIGNED,        \
+        short int              : 1,                     \
+        int                    : 1,                     \
+        long int               : 1,                     \
+        long long int          : 1,                     \
+        default                : IS_SIGNED1(T)          \
+    )
+
+#define IS_UNSIGNED15(T)                                \
+    _Generic((T),                                       \
+        wchar_t               : !IS_WCHAR_T_SIGNED,     \
+        default               : 0                       \
+    )
+
+#define IS_UNSIGNED14(T)                                \
+    _Generic((T),                                       \
+        wint_t                : !IS_WINT_T_SIGNED,      \
+        default               : IS_UNSIGNED15(T)        \
+    )
+
+#define IS_UNSIGNED13(T)                                \
+    _Generic((T),                                       \
+        sig_atomic_t          : !IS_SIG_ATOMIC_T_SIGNED,\
+        default               : IS_UNSIGNED14(T)        \
+    )
+
+#define IS_UNSIGNED12(T)                                \
+    _Generic((T),                                       \
+        uint_fast64_t          : 1,                     \
+        default               : IS_UNSIGNED13(T)        \
+    )
+
+#define IS_UNSIGNED11(T)                                \
+    _Generic((T),                                       \
+        uint_fast32_t          : 1,                     \
+        default               : IS_UNSIGNED12(T)        \
+    )
+
+#define IS_UNSIGNED10(T)                                \
+    _Generic((T),                                       \
+        uint_fast16_t          : 1,                     \
+        default               : IS_UNSIGNED11(T)        \
+    )
+
+#define IS_UNSIGNED9(T)                                 \
+    _Generic((T),                                       \
+        uint_fast8_t           : 1,                     \
+        default               : IS_UNSIGNED10(T)        \
+    )
+
+#define IS_UNSIGNED8(T)                                 \
+    _Generic((T),                                       \
+        uint_least64_t          : 1,                    \
+        default                : IS_UNSIGNED9(T)        \
+    )
+#define IS_UNSIGNED7(T)                                 \
+    _Generic((T),                                       \
+        uint_least32_t          : 1,                    \
+        default                : IS_UNSIGNED8(T)        \
+    )
+#define IS_UNSIGNED6(T)                                 \
+    _Generic((T),                                       \
+        uint_least16_t          : 1,                    \
+        default                : IS_UNSIGNED7(T)        \
+    )
+
+#define IS_UNSIGNED5(T)                                 \
+    _Generic((T),                                       \
+        uint_least8_t           : 1,                    \
+        default                : IS_UNSIGNED6(T)        \
+    )
+
+#define IS_UNSIGNED4(T)                                 \
+    _Generic((T),                                       \
+        uint8_t                : 1,                     \
+        uint16_t               : 1,                     \
+        uint32_t               : 1,                     \
+        uint64_t               : 1,                     \
+        default                : IS_UNSIGNED5(T)        \
+    )
+
+#define IS_UNSIGNED3(T)                                 \
+    _Generic((T),                                       \
+        uintptr_t              : 1,                     \
+        default                : IS_UNSIGNED4(T)        \
+    )
+
+#define IS_UNSIGNED2(T)                                 \
+    _Generic((T),                                       \
+        uintmax_t              : 1,                     \
+        default                : IS_UNSIGNED3(T)        \
+    )
+
+#define IS_UNSIGNED1(T)                                 \
+    _Generic((T),                                       \
+        size_t                 : 1,                     \
+        default                : IS_UNSIGNED2(T)        \
     )
 
 /**
- * Checks (at compile-time) whether the type of T is an unsigned type.
+ * Checks (at compile-time) whether the type of T is a unsigned type. 
  *
  * T - An expression. It is not evaluated. 
  *
  * Note: This would not detect _BitInt. 
  *
- * Returns 1 (true) only if T is an unsigned type; 0 (false) elsewise. */
-#define IS_UNSIGNED(T)                            \
-    _Generic((T),                                 \
-        _Bool                  : 1,               \
-        char                   : !IS_CHAR_SIGNED, \
-        unsigned char          : 1,               \
-        unsigned short int     : 1,               \
-        unsigned int           : 1,               \
-        unsigned long int      : 1,               \
-        unsigned long long int : 1,               \
-        default                : 0                \
+ * Returns 1 (true) only if T is a unsigned type; 0 (false) elsewise. */
+#define IS_UNSIGNED(T)                                  \
+    _Generic((T),                                       \
+        _Bool                  : 1,                     \
+        char                   : !IS_CHAR_SIGNED,       \
+        unsigned char          : 1,                     \
+        unsigned short int     : 1,                     \
+        unsigned int           : 1,                     \
+        unsigned long int      : 1,                     \
+        unsigned long long int : 1,                     \
+        default                : IS_UNSIGNED1(T)        \
     )
 
 /**
