@@ -240,7 +240,7 @@
          ++UNIQUE_NAME(i))
 
 /**
- * Checks (at compile-time) if an expression is compatible with a type.
+ * Compile-time check of whether an expression is compatible with a type.
  *
  * EXPR - An expression. It is not evaluted.
  * T    - The type to check against.
@@ -268,7 +268,7 @@
     )     
 
 /**
- * Checks (at compile-time) if T has type nullptr_t.
+ * Compile-time check of whether T has type nullptr_t.
  *
  * T - An expression. It is not evaluted. 
  *
@@ -280,7 +280,7 @@
     )
 
 /**
- * Checks (at compile-time) if T has type FILE *.
+ * Compile-time check of whether T has type FILE *.
  *
  * T - An expression. It is not evaluted. 
  *
@@ -292,7 +292,7 @@
     )
 
 /**
- * Checks (at compile-time) whether T is an array.
+ * Compile-time check of whether T is an array.
  *
  * T - An expression. It is not evaluted. 
  *
@@ -309,7 +309,7 @@
     )
 
 /**
- * Checks (at compile-time) whether A is a pointer.
+ * Compile-time check of whether A is a pointer.
  *
  * T - An expression. It is not evaluted. 
  *
@@ -338,25 +338,25 @@
     )
 
 /**
- * Checks (at compile-time) whether char is signed or unsigned.
+ * Compile-time check of whether char is signed or unsigned.
  *
  * Returns 1 (true) if char is signed, else 0 (false). */
 #define IS_CHAR_SIGNED          STATIC_IF((char)-1 < 0, 1, 0)
 
 /**
- * Checks (at compile-time) whether sig_atomic_t is signed or unsigned.
+ * Compile-time check of whether sig_atomic_t is signed or unsigned.
  *
  * Returns 1 (true) if sig_atomic_t is signed, else 0 (false). */
 #define IS_SIG_ATOMIC_T_SIGNED  STATIC_IF((sig_atomic_t)-1 < 0, 1, 0)
 
 /**
- * Checks (at compile-time) whether wint_t is signed or unsigned.
+ * Compile-time check of whether wint_t is signed or unsigned.
  *
  * Returns 1 (true) if wint_t is signed, else 0 (false). */
 #define IS_WINT_T_SIGNED        STATIC_IF((wint_t)-1 < 0, 1, 0)
 
 /**
- * Checks (at compile-time) whether wchar_t is signed or unsigned.
+ * Compile-time check of whether wchar_t is signed or unsigned.
  *
  * Returns 1 (true) if wchar_t is signed, else 0 (false). */
 #define IS_WCHAR_T_SIGNED       STATIC_IF((wchar_t)-1 < 0, 1, 0)
@@ -453,7 +453,7 @@
     )
 
 /**
- * Checks (at compile-time) whether the type of T is a signed type. 
+ * Compile-time check whether the type of T is a signed type. 
  *
  * T - An expression. It is not evaluated. 
  *
@@ -562,7 +562,7 @@
     )
 
 /**
- * Checks (at compile-time) whether the type of T is a unsigned type. 
+ * Compile-time check of whether the type of T is a unsigned type. 
  *
  * T - An expression. It is not evaluated. 
  *
@@ -582,7 +582,7 @@
     )
 
 /**
- * Checks (at compile-time) whether the type of T is any integral type. 
+ * Compile-time check of whether the type of T is any integral type. 
  *
  * T - An expression. It is not evaluated. 
  *
@@ -592,7 +592,7 @@
 #define IS_INTEGRAL(T)  (IS_SIGNED(T) || IS_UNSIGNED(T))
 
 /**
- * Checks (at compile-time) whether the type of T is a floating-point type.
+ * Compile-time check of whether the type of T is a floating-point type.
  *
  * T - An expression. It is not evaluated. 
  *
@@ -681,7 +681,7 @@
 #endif
 
 /**
- * Checks (at compile-time) whether the type of T is any arithmetic type. 
+ * Compile-time check of whether the type of T is any arithmetic type. 
  *
  * T - An expression. It is not evaluated. 
  *
@@ -691,8 +691,8 @@
 #define IS_ARITHMETIC(T)    (IS_INTEGRAL(T) || IS_FLOATING_POINT(T))
 
 /**
- * Checks (at compile-time) whether the type of T is a C string type, i.e.
- * char *, or char const *.
+ * Compile-time check of whether the type of T is a C string type, i.e. char *, 
+ * or char const *.
  *
  * T - An expression. It is not evaluated.
  *
@@ -705,8 +705,8 @@
     )
 
 /** 
- * Checks (at compile-time) whether the type of T is compatible with the type
- * of an array of length N.
+ * Compile-time of whether the type of T is compatible with the type of an 
+ * array of length N.
  *
  * T - An expression. It is not evaluated.
  * N - Length of array.
@@ -720,8 +720,8 @@
     )
 
 /**
- * Checks (at compile-time) whether the type of T is variable-length array or
- * an unspecified-length array.
+ * Compile-time of whether the type of T is variable-length array or an 
+ * unspecified-length array.
  *
  * T - An expression. It is not evaluated.
  *
@@ -733,7 +733,7 @@
     && IS_COMPATIBLE_WITH_ARRAY_OF_LENGTH_N(T, 2))
 
 /**
- * Checks (at compile-time) whether the type of T is a function type.
+ * Compile-time check of whether the type of T is a function type.
  *
  * T - An expression. It is not evaluated.
  *
