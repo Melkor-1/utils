@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H 1
 
-#include <sys/types.>
+#include <sys/types.h>
 
 /* These functions return -1 on failure, or a non-negative integer otherwise. */
 

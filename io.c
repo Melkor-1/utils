@@ -1,7 +1,16 @@
+#undef POSIX_C_SOURCE
+#undef _XOPEN_SOURCE
+
+#define _POSIX_C_SOURCE 2008'19L
+#define _XOPEN_SOURCE   700
+
+#include "io.h"
+
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "io.h"
+#include <unistd.h>
 
 ssize_t read_eintr(int fd, void *buf, size_t size)
 {
