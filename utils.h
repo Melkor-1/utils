@@ -17,7 +17,6 @@
 #include <time.h>
 #include <wchar.h>
 
-/* Would these be better as `static constexpr unsigned char`s? */
 #define CHARIFY_0   '0' 
 #define CHARIFY_1   '1'
 #define CHARIFY_2   '2' 
