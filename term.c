@@ -6,9 +6,61 @@
 
 #include "term.h"
 
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
+
+#include "io.h"
+#include "sequences.h"
+
+static bool parse_long(const char s[static 1], int base, long val[static 1])
+{
+    char *endptr;
+    errno = 0;
+    const long i = strtol(s, &endptr, base);
+    
+    if (endptr == s || *endptr != '\0' || errno != 0) {
+        return false;
+    }
+
+    *val = i;
+    return true;
+}
+
+static TermCodes get_cursor_pos(WinInfo wi[static 1])
+{
+    /* The cursor is positioned at the bottom right of the window. We can learn 
+     * how many rows and columns there must be on the screen by querying the
+     * position of the cursor. */
+    ssize_t len = (ssize_t) strlen(GET_CUR_POS);
+
+    if (write_eintr(STDOUT_FILENO, GET_CUR_POS, len) != len) {
+        return TERM_FAILURE;
+    }
+
+    /* The reply is an escape sequence of the form '\x1b[24;80R', we will
+     * read it into a buffer until read() returns EOF or until we get to
+     * the 'R' character. */
+    char buf[32];   /* Should be more than enough. */
+
+    for (size_t i = 0; i < sizeof buf - 1; ++i) {
+        if (read_eintr(STDIN_FILENO, &buf[i], 1) != 1 || buf[i] == 'R') {
+            break;
+        }
+    }
+    *buf = '\0';
+
+    /* Skip the escape character and the left square brace. */
+    return memcmp(buf, "\x1b[", 2) != 0
+        || sscanf(&buf[2], "%u;%u", &wi->rows, &wi->cols) != 2
+        ? TERM_FAILURE
+        : TERM_SUCCESS;
+}
 
 TermCodes term_get_winsize(WinInfo wi[static 1])
 {
@@ -28,8 +80,41 @@ TermCodes term_get_winsize(WinInfo wi[static 1])
         wi->cols = ts.ts_col;
         return TERM_SUCCESS;
     }
-#endif  /* defined(TIOCGWINSZ) */
-    return TERM_IOCTL_UNSUPPORTED; 
+#endif /* defined(TIOCGWINSZ) */
+
+    /* ioctl() failed. Fallback to VT100/ANSI escape sequences. */
+    ssize_t len = (ssize_t) strlen(POS_CUR_BOTTOM_RIGHT);
+
+    if (write_eintr(STDOUT_FILENO, POS_CUR_BOTTOM_RIGHT, len) == len) {
+        if (get_cursor_pos(wi) == TERM_SUCCESS) {
+            return TERM_SUCCESS;
+        }
+    }
+    
+    /* write() or get_cursor_pos() failed as well. Now as a last resort, check
+     * LINES and COLUMNS environment variables. 
+     * Though note that these variables are not reliable, are not guaranteed 
+     * to exist, and might not be up to date if the user changes the terminal 
+     * size. If set, the sh, ash, dash, csh shells do not update LINES and
+     * COLUMNS, but bash, fish, zsh, ksh, ksh93u+m, and tcsh handle SIGWINCH to
+     * update these variables. */
+    const char *const rows = getenv("LINES");
+    const char *const cols = getenv("COLUMNS");
+
+    if (rows != nullptr && cols != nullptr) {
+        long r;
+        long c;
+        bool res = parse_long(rows, 10, &r) && parse_long(cols, 10, &c);
+    
+        if (!res || r > UINT_MAX || c > UINT_MAX) {
+            return TERM_FAILURE;
+        }
+
+        wi->rows = (unsigned int) r;
+        wi->cols = (unsigned int) c;
+        return TERM_SUCCESS;
+    }
+    return TERM_FAILURE; 
 }
 
 TermCodes term_enable_raw_mode(struct termios old[static 1])

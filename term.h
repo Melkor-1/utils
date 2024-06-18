@@ -10,7 +10,7 @@ typedef struct win_info {
 
 typedef enum term_codes {
     TERM_SUCCESS,
-    TERM_IOCTL_UNSUPPORTED,
+    TERM_FAILURE,
     TERM_TCGETATTR_FAILED,
     TERM_TCSETATTR_FAILED,
 } TermCodes;
