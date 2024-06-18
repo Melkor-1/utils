@@ -47,7 +47,7 @@ ssize_t write_all(int fd,
 
     for (ret = 0; total_written < size && ret != -1;
         total_written += (size_t) ret) {
-        ret = write_eintr(fd, buf + total_written, bytes_left);
+        ret = write_eintr(fd, (char *) buf + total_written, bytes_left);
         bytes_left -= (size_t) ret;
     }
     *nwritten = total_written;
