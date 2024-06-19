@@ -10,9 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-ssize_t read_eintr(int fd, void *buf, size_t size)
+ssize_t io_read_eintr(int fd, void *buf, size_t size)
 {
     ssize_t ret = 0;
 
@@ -24,7 +26,7 @@ ssize_t read_eintr(int fd, void *buf, size_t size)
     return ret;
 }
 
-ssize_t write_eintr(int fd, const void *buf, size_t size)
+ssize_t io_write_eintr(int fd, const void *buf, size_t size)
 {
     ssize_t ret = 0;
 
@@ -36,10 +38,7 @@ ssize_t write_eintr(int fd, const void *buf, size_t size)
     return ret;
 }
 
-ssize_t write_all(int fd, 
-                  void *restrict buf, 
-                  size_t size, 
-                  size_t *restrict nwritten)
+ssize_t io_write_all(int fd, const void *buf, size_t size)
 {
     size_t total_written = 0;
     size_t bytes_left = size;
@@ -47,9 +46,16 @@ ssize_t write_all(int fd,
 
     for (ret = 0; total_written < size && ret != -1;
         total_written += (size_t) ret) {
-        ret = write_eintr(fd, (char *) buf + total_written, bytes_left);
+        ret = io_write_eintr(fd, (char *) buf + total_written, bytes_left);
         bytes_left -= (size_t) ret;
     }
-    *nwritten = total_written;
-    return ret;
+
+    return ret == -1 ? -1 : total_written;
+}
+
+ssize_t io_copy_file_perms(int src_fd, int dest_fd)
+{
+    struct stat st;
+
+    return fstat(src_fd, &st) != -1 && fchmod(dest_fd, st.st_mode) != -1 ? 0 : -1;
 }
