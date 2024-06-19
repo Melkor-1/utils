@@ -38,19 +38,32 @@ ssize_t io_write_eintr(int fd, const void *buf, size_t size)
     return ret;
 }
 
-ssize_t io_write_all(int fd, const void *buf, size_t size)
+ssize_t io_read_all(int fd, void *buf, size_t size)
 {
-    size_t total_written = 0;
+    size_t rcount = 0;
     size_t bytes_left = size;
     ssize_t ret;
 
-    for (ret = 0; total_written < size && ret != -1;
-        total_written += (size_t) ret) {
-        ret = io_write_eintr(fd, (char *) buf + total_written, bytes_left);
+    for (ret = 0; rcount < size && ret != -1; rcount += (size_t) ret) {
+        ret = io_read_eintr(fd, (char *) buf + rcount, bytes_left);
         bytes_left -= (size_t) ret;
     }
 
-    return ret == -1 ? -1 : total_written;
+    return ret == -1 ? -1 : rcount;
+}
+
+ssize_t io_write_all(int fd, const void *buf, size_t size)
+{
+    size_t wcount = 0;
+    size_t bytes_left = size;
+    ssize_t ret;
+
+    for (ret = 0; wcount < size && ret != -1; wcount += (size_t) ret) {
+        ret = io_write_eintr(fd, (char *) buf + wcount, bytes_left);
+        bytes_left -= (size_t) ret;
+    }
+
+    return ret == -1 ? -1 : wcount;
 }
 
 ssize_t io_copy_file_perms(int src_fd, int dest_fd)

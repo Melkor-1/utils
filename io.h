@@ -7,8 +7,8 @@
  * These functions return -1 on failure, or a non-negative integer otherwise. */
 
 /** 
- * Version of read() that retries when interrupted by EINTR (possibly 
- * by a SIGWINCH).  */
+ * Version of read() that retries when interrupted by EINTR (possibly by a 
+ * SIGWINCH). */
 [[nodiscard, gnu::nonnull]] ssize_t io_read_eintr(int fd, void *buf, size_t size);
 
 /**
@@ -17,6 +17,11 @@
 [[nodiscard, gnu::nonnull]] ssize_t io_write_eintr(int fd, 
                                                    const void *buf, 
                                                    size_t size);
+
+/**
+ * Version of read() that retries when interrupted by EINTR (possibly by a 
+ * SIGWINCH). */
+[[nodiscard, gnu::nonnull]] ssize_t io_read_all(int fd, void *buf, size_t size);
 
 /** 
  * A wrapper around io_write_eintr() that's called in a loop until size bytes 
