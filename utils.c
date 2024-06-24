@@ -2,7 +2,7 @@
  * Author: Melkor-1
  * Date: Friday, June 7, 2024
  * 
- * Defines utility functions declared in util.h. */
+ * Defines utility functions declared in utils.h. */
 
 #include "utils.h"
 

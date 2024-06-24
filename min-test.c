@@ -6,12 +6,7 @@
 
 #include "min.h"
 
-/* Current versions of gcc and clang support -std=c2x which sets 
- * __STDC_VERSION__ to this placeholder value. GCC 14.1 does not set
- * __STDC_VERSION__ to 202311L with the std=c23 flag, but Clang 18.1 does. */
-#define C23_PLACEHOLDER 202000L
-    
-#if defined(__STDC_VERSION__) && __STDC_VERSION >= C23_PLACEHOLDER
+#if defined(__has_c_attribute__) && __has_c_attribute__(noreturn)
     #define NORETURN    [[noreturn]]
 #elif defined(_MSC_VER)
     #define NORETURN    __declspec(noreturn)
